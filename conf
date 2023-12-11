@@ -1,0 +1,57 @@
+[DEFAULT]
+; project_root = /home/yourProjectPath/MalPurifier
+; database_dir = /disk2   # Path to Store Native APK Feature files
+; dataset_name = Androzoo # or Drebin
+
+[dataset]
+dataset_dir = %(database_dir)s/%(dataset_name)s/
+malware_dir = %(database_dir)s/%(dataset_name)s/SelectedMalware
+benware_dir = %(database_dir)s/%(dataset_name)s/SelectedBenign
+intermediate = %(project_root)s/dataset/%(dataset_name)s
+
+[metadata]
+naive_data_pool = %(database_dir)s/androzoo_naive_data/
+
+[experiments]
+md_dnn = %(project_root)s/save/%(dataset_name)s/md_dnn
+md_at_pgd = %(project_root)s/save/%(dataset_name)s/md_at_pgd
+md_at_ma = %(project_root)s/save/%(dataset_name)s/md_at_ma
+amd_kde = %(project_root)s/save/%(dataset_name)s/amd_kde
+amd_icnn = %(project_root)s/save/%(dataset_name)s/amd_icnn
+amd_dnn_plus = %(project_root)s/save/%(dataset_name)s/amd_dnn_plus
+amd_dla =  %(project_root)s/save/%(dataset_name)s/amd_dla
+amd_pad_ma = %(project_root)s/save/%(dataset_name)s/amd_pad_ma
+dae = %(project_root)s/save/%(dataset_name)s/dae
+dnn = %(project_root)s/save/%(dataset_name)s/dnn
+md_at_fgsm = %(project_root)s/save/%(dataset_name)s/md_at_fgsm
+vae = %(project_root)s/save/%(dataset_name)s/vae
+mlp = %(project_root)s/save/%(dataset_name)s/mlp
+fd_vae = %(project_root)s/save/%(dataset_name)s/fd_vae
+rf = %(project_root)s/save/%(dataset_name)s/rf
+dt = %(project_root)s/save/%(dataset_name)s/dt
+md_cnn = %(project_root)s/save/%(dataset_name)s/md_cnn
+md_lstm = %(project_root)s/save/%(dataset_name)s/md_lstm
+md_rnn = %(project_root)s/save/%(dataset_name)s/md_rnn
+md_fcn = %(project_root)s/save/%(dataset_name)s/md_fcn
+md_svm = %(project_root)s/save/%(dataset_name)s/md_svm
+stepwise_max=%(database_dir)s/%(dataset_name)s/attack/stepwise_max
+orthogonal_pgdlinf=%(database_dir)s/%(dataset_name)s/attack/orthogonal_pgdlinf
+orthogonal_pgdl2=%(database_dir)s/%(dataset_name)s/attack/orthogonal_pgdl2
+orthogonal_pgdl1=%(database_dir)s/%(dataset_name)s/attack/orthogonal_pgdl1
+orthogonal_max=%(database_dir)s/%(dataset_name)s/attack/orthogonal_max
+orthogonal_stepwise_max=%(database_dir)s/%(dataset_name)s/attack/orthogonal_stepwise_max
+ompap = %(database_dir)s/%(dataset_name)s/attack/ompap
+ompa = %(database_dir)s/%(dataset_name)s/attack/ompa
+bca = %(database_dir)s/%(dataset_name)s/attack/bca
+bga = %(database_dir)s/%(dataset_name)s/attack/bga
+rfgsm = %(database_dir)s/%(dataset_name)s/attack/rfgsm
+gdkde = %(database_dir)s/%(dataset_name)s/attack/gdkde
+gdkdel1 = %(database_dir)s/%(dataset_name)s/attack/gdkdel1
+grosse = %(database_dir)s/%(dataset_name)s/attack/grosse
+max = %(database_dir)s/%(dataset_name)s/attack/max
+pgdadam = %(database_dir)s/%(dataset_name)s/attack/pgdadam
+pgdl2 = %(database_dir)s/%(dataset_name)s/attack/pgdl2
+pgdlinf = %(database_dir)s/%(dataset_name)s/attack/pgdlinf
+pgdl1 = %(database_dir)s/%(dataset_name)s/attack/pgdl1
+pointwise = %(database_dir)s/%(dataset_name)s/attack/pointwise
+salt_and_pepper = %(database_dir)s/%(dataset_name)s/attack/salt_and_pepper

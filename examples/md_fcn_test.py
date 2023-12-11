@@ -1,0 +1,93 @@
+# 使用未来版本特性，确保代码在Python2和Python3中有一致的行为
+from __future__ import absolute_import, division, print_function
+
+# 导入所需的库
+import os.path as path
+import argparse
+import time
+import numpy
+
+# 导入自定义模块
+from core.defense import Dataset, MalwareDetectionFCN
+from tools.utils import save_args, get_group_args, to_tensor, dump_pickle, read_pickle
+
+# 初始化argparse对象，用于解析命令行参数
+cmd_md = argparse.ArgumentParser(description='用于学习恶意软件检测器的参数')
+
+# 定义与特征提取相关的命令行参数
+feature_argparse = cmd_md.add_argument_group(title='feature')
+feature_argparse.add_argument('--proc_number', type=int, default=2,
+                              help='用于特征提取的线程数量。')
+feature_argparse.add_argument('--number_of_smali_files', type=int, default=1000000,
+                              help='表示每个应用的smali文件的最大数量。')
+feature_argparse.add_argument('--max_vocab_size', type=int, default=10000,
+                              help='词汇表的最大容量。')
+feature_argparse.add_argument('--update', action='store_true',
+                              help='是否更新已存在的特征。')
+
+# 定义与检测器相关的命令行参数
+detector_argparse = cmd_md.add_argument_group(title='detector')
+detector_argparse.add_argument('--cuda', action='store_true', default=True,
+                               help='是否使用CUDA进行GPU加速。')
+detector_argparse.add_argument('--seed', type=int, default=0,
+                               help='随机数种子。')
+detector_argparse.add_argument('--dropout', type=float, default=0.6,
+                               help='Dropout率。')
+detector_argparse.add_argument('--batch_size', type=int, default=128,
+                               help='Mini-batch的大小。')
+detector_argparse.add_argument('--epochs', type=int, default=50,
+                               help='训练的轮数。')
+detector_argparse.add_argument('--lr', type=float, default=0.001,
+                               help='初始学习率。')
+detector_argparse.add_argument('--weight_decay', type=float, default=0e-4,
+                               help='权重衰减系数。')
+detector_argparse.add_argument('--hidden_units', type=lambda s: [int(u) for u in s.split(',')], default='512,256,128',
+                               help='delimited list input, e.g., "512,256,128"')   
+
+# 定义与数据集相关的命令行参数
+dataset_argparse = cmd_md.add_argument_group(title='data_producer')
+detector_argparse.add_argument('--cache', action='store_true', default=False,
+                               help='是否使用缓存数据。')
+
+# 定义与模式相关的命令行参数
+mode_argparse = cmd_md.add_argument_group(title='mode')
+mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
+                           help='执行模式：训练或测试。')
+mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', required=False,
+                           help='测试时使用的模型名称后缀。')
+
+# 定义主函数
+def _main():
+    args = cmd_md.parse_args()
+
+    # 创建数据集
+    dataset = Dataset(feature_ext_args=get_group_args(args, cmd_md, 'feature'))
+
+    # 获取数据生成器
+    train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size, name='train', use_cache=args.cache)
+    val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size, name='val')
+    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
+    assert dataset.n_classes == 2
+
+    # 设置计算设备
+    dv = 'cuda' if args.cuda else 'cpu'
+    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
+
+    # 创建模型
+    model = MalwareDetectionFCN(dataset.vocab_size,
+                                n_classes=dataset.n_classes,
+                                device=dv, 
+                                name=model_name, 
+                                **vars(args))
+    model = model.to(dv).double()
+
+    if args.mode == 'train':
+        model.fit(train_dataset_producer, val_dataset_producer, epochs=args.epochs, lr=args.lr, weight_decay=args.weight_decay)
+        save_args(path.join(path.dirname(model.model_save_path), "hparam"), vars(args))
+        dump_pickle(vars(args), path.join(path.dirname(model.model_save_path), "hparam.pkl"))
+
+    model.load()
+    model.predict(test_dataset_producer)
+
+if __name__ == '__main__':
+    _main()

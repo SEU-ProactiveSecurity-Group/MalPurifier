@@ -1,0 +1,577 @@
+lware_Detection/pad4amd/core/droidfeature/read_pkl.py
+['org.simalliance.openmobileapi.SMARTCARD#.tag#permission',
+ 'android.permission.ACCESS_FINE_LOCATION#.tag#permission',
+ 'com.anddoes.launcher.permission.UPDATE_COUNT#.tag#permission',
+ 'android.permission.NFC#.tag#permission',
+ 'android.permission.BLUETOOTH_CONNECT#.tag#permission',
+ 'android.permission.ACCESS_COARSE_LOCATION#.tag#permission',
+ 'android.permission.READ_LOGS#.tag#permission',
+ 'android.permission.RECEIVE_BOOT_COMPLETED#.tag#permission',
+ 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS#.tag#permission',
+ 'android.permission.GET_TASKS#.tag#permission',
+ 'android.permission.READ_EXTERNAL_STORAGE#.tag#permission',
+ 'com.huawei.android.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'com.sec.android.provider.badge.permission.WRITE#.tag#permission',
+ 'com.wisedu.cpdaily.permission.PROCESS_PUSH_MSG#.tag#permission',
+ 'android.permission.SYSTEM_ALERT_WINDOW#.tag#permission',
+ 'com.android.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'com.huawei.appmarket.service.commondata.permission.GET_COMMON_DATA#.tag#permission',
+ 'getui.permission.GetuiService.com.wisedu.cpdaily#.tag#permission',
+ 'android.permission.RECORD_AUDIO#.tag#permission',
+ 'android.permission.RESTART_PACKAGES#.tag#permission',
+ 'android.permission.READ_SETTINGS#.tag#permission',
+ 'android.permission.REQUEST_INSTALL_PACKAGES#.tag#permission',
+ 'android.permission.MODIFY_AUDIO_SETTINGS#.tag#permission',
+ 'android.permission.WRITE_SETTINGS#.tag#permission',
+ 'com.huawei.android.launcher.permission.CHANGE_BADGE#.tag#permission',
+ 'com.wisedu.cpdaily.permission.RONG_ACCESS_RECEIVER#.tag#permission',
+ 'android.permission.INSTALL_PACKAGES#.tag#permission',
+ 'android.permission.DISABLE_KEYGUARD#.tag#permission',
+ 'android.permission.FOREGROUND_SERVICE#.tag#permission',
+ 'android.permission.ACCESS_LOCATION_EXTRA_COMMANDS#.tag#permission',
+ 'android.permission.BROADCAST_STICKY#.tag#permission',
+ 'android.permission.REQUEST_DELETE_PACKAGES#.tag#permission',
+ 'android.permission.CAMERA#.tag#permission',
+ 'android.permission.ACCESS_WIFI_STATE#.tag#permission',
+ 'com.heytap.mcs.permission.RECIEVE_MCS_MESSAGE#.tag#permission',
+ 'android.permission.MOUNT_UNMOUNT_FILESYSTEMS#.tag#permission',
+ 'android.permission.READ_APP_BADGE#.tag#permission',
+ 'com.android.launcher.permission.INSTALL_SHORTCUT#.tag#permission',
+ 'android.permission.READ_PHONE_STATE#.tag#permission',
+ 'android.permission.BLUETOOTH#.tag#permission',
+ 'com.coloros.mcs.permission.RECIEVE_MCS_MESSAGE#.tag#permission',
+ 'com.oppo.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'android.permission.ACCESS_NETWORK_STATE#.tag#permission',
+ 'android.permission.CHANGE_NETWORK_STATE#.tag#permission',
+ 'com.sec.android.provider.badge.permission.READ#.tag#permission',
+ 'android.permission.WRITE_EXTERNAL_STORAGE#.tag#permission',
+ 'android.permission.VIBRATE#.tag#permission',
+ 'android.permission.CHANGE_WIFI_STATE#.tag#permission',
+ 'android.permission.BAIDU_LOCATION_SERVICE#.tag#permission',
+ 'android.permission.BLUETOOTH_ADMIN#.tag#permission',
+ 'android.permission.FLASHLIGHT#.tag#permission',
+ 'com.wisedu.cpdaily.permission.PUSH_PROVIDER#.tag#permission',
+ 'com.huawei.android.launcher.permission.WRITE_SETTINGS#.tag#permission',
+ 'me.everything.badger.permission.BADGE_COUNT_WRITE#.tag#permission',
+ 'com.htc.launcher.permission.UPDATE_SHORTCUT#.tag#permission',
+ 'com.wisedu.cpdaily.permission.MIPUSH_RECEIVE#.tag#permission',
+ 'android.permission.INTERNET#.tag#permission',
+ 'com.htc.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'com.sonyericsson.home.permission.BROADCAST_BADGE#.tag#permission',
+ 'android.permission.KILL_BACKGROUND_PROCESSES#.tag#permission',
+ 'com.sonymobile.home.permission.PROVIDER_INSERT_BADGE#.tag#permission',
+ 'android.permission.USE_FINGERPRINT#.tag#permission',
+ 'com.oppo.launcher.permission.WRITE_SETTINGS#.tag#permission',
+ 'com.majeur.launcher.permission.UPDATE_BADGE#.tag#permission',
+ 'me.everything.badger.permission.BADGE_COUNT_READ#.tag#permission',
+ 'android.permission.WAKE_LOCK#.tag#permission',
+ 'org.simalliance.openmobileapi.SMARTCARD#.tag#permission',
+ 'com.anddoes.launcher.permission.UPDATE_COUNT#.tag#permission',
+ 'android.permission.BLUETOOTH_CONNECT#.tag#permission',
+ 'com.huawei.android.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'com.sec.android.provider.badge.permission.WRITE#.tag#permission',
+ 'com.wisedu.cpdaily.permission.PROCESS_PUSH_MSG#.tag#permission',
+ 'com.android.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'com.huawei.appmarket.service.commondata.permission.GET_COMMON_DATA#.tag#permission',
+ 'getui.permission.GetuiService.com.wisedu.cpdaily#.tag#permission',
+ 'android.permission.READ_SETTINGS#.tag#permission',
+ 'com.huawei.android.launcher.permission.CHANGE_BADGE#.tag#permission',
+ 'com.wisedu.cpdaily.permission.RONG_ACCESS_RECEIVER#.tag#permission',
+ 'android.permission.FOREGROUND_SERVICE#.tag#permission',
+ 'com.heytap.mcs.permission.RECIEVE_MCS_MESSAGE#.tag#permission',
+ 'android.permission.READ_APP_BADGE#.tag#permission',
+ 'com.coloros.mcs.permission.RECIEVE_MCS_MESSAGE#.tag#permission',
+ 'com.oppo.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'com.sec.android.provider.badge.permission.READ#.tag#permission',
+ 'android.permission.BAIDU_LOCATION_SERVICE#.tag#permission',
+ 'com.wisedu.cpdaily.permission.PUSH_PROVIDER#.tag#permission',
+ 'com.huawei.android.launcher.permission.WRITE_SETTINGS#.tag#permission',
+ 'me.everything.badger.permission.BADGE_COUNT_WRITE#.tag#permission',
+ 'com.htc.launcher.permission.UPDATE_SHORTCUT#.tag#permission',
+ 'com.wisedu.cpdaily.permission.MIPUSH_RECEIVE#.tag#permission',
+ 'com.htc.launcher.permission.READ_SETTINGS#.tag#permission',
+ 'com.sonyericsson.home.permission.BROADCAST_BADGE#.tag#permission',
+ 'com.sonymobile.home.permission.PROVIDER_INSERT_BADGE#.tag#permission',
+ 'com.oppo.launcher.permission.WRITE_SETTINGS#.tag#permission',
+ 'com.majeur.launcher.permission.UPDATE_BADGE#.tag#permission',
+ 'me.everything.badger.permission.BADGE_COUNT_READ#.tag#permission',
+ 'com.wisorg.wisedu.im.msgheader.InteractionActivity#.tag#activity',
+ 'com.wisorg.wisedu.push.CpPushBrandActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.WelcomeActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.SplashActivity#.tag#activity',
+ 'com.wisorg.wisedu.home.ui.HomeActivity#.tag#activity',
+ 'com.wisorg.wisedu.home.mycollege.MyColleagueActivity#.tag#activity',
+ 'com.wisorg.wisedu.home.policy.CpPolicyPermissionActivity#.tag#activity',
+ 'com.tencent.smtt.sdk.VideoActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.GuideActivity#.tag#activity',
+ 'com.wisorg.wisedu.home.feature.MenuPopActivity#.tag#activity',
+ 'com.wisorg.wisedu.common.ScanDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.chooseSchool.ChooseCityActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.chooseSchool.ChooseSchoolActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.chooseSchool.SchoolSelectActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.BackGroundWallActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.IdsLoginActivity#.tag#activity',
+ 'com.wisorg.wisedu.common.BrowsePageActivity#.tag#activity',
+ 'com.wisorg.wisedu.common.BrowseNormalPageActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.FansActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.FocusActivity#.tag#activity',
+ 'com.wisorg.wisedu.im.contact.contact.CampusContactActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.settings.BlackListActivity#.tag#activity',
+ 'com.wisorg.wisedu.im.ContactSettingActivity#.tag#activity',
+ 'com.wisorg.wisedu.common.SchemeActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.homepage.HomePageActivity#.tag#activity',
+ 'com.wisorg.wisedu.organ.detail.OrganDetailActivity#.tag#activity',
+ 'com.yalantis.ucrop.UCropActivity#.tag#activity',
+ 'com.wisorg.wisedu.common.views.SimplyCropActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.ReplyActivity#.tag#activity',
+ 'com.wisorg.wisedu.discovery.expert.show.detail.ShowDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.home.consult.activity.TopicDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.redlist.RedListActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.redlist.SecretActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.settings.AboutActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.homepage.PhotoWallActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.publish.PublishActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.publish.VideoCoverActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.videoplay.VideoPreviewActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.publish.PublishConsultActivity#.tag#activity',
+ 'com.wisorg.wisedu.discovery.detail.PostDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.home.consult.activity.ConsultDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.MyQrCodeActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teacher.work.WorkDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teahceramp.work.detail.TaskDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teahceramp.work.detail.MyFlowDetailActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teahceramp.work.detail.OperationActivity#.tag#activity',
+ 'com.wisorg.wisedu.discovery.expert.speak.ArticleDetailBaseActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teahceramp.work.detail.OperationSelectActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teacher.work.WorkQuickDealActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teahceramp.mine.personaldata.PersonalDataActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teacher.work.WorkDetailNewActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teacher.work.NoSupportActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.topic.CreateTopicActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.topic.CreateTopicStausActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.topic.TopicContributionListActivity#.tag#activity',
+ 'com.mob.tools.MobUIShell#.tag#activity',
+ 'cn.sharesdk.tencent.qq.ReceiveActivity#.tag#activity',
+ 'com.wisedu.cpdaily.wxapi.WXEntryActivity#.tag#activity',
+ 'com.wisorg.wisedu.login.MultiLoginActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.level.MyLevelActivity#.tag#activity',
+ 'com.wisorg.wisedu.mine.coin.MyCoinActivity#.tag#activity',
+ 'com.wisorg.wisedu.common.ContainerActivity#.tag#activity',
+ 'com.wisorg.wisedu.amp.teahceramp.mine.settings.TeacherSettingsActivity#.tag#activity',
+ 'com.wisedu.campushoy.common.permission.PermissionUtils$PermissionActivity#.tag#activity',
+ 'com.wisorg.wisedu.widget.selector.CollegePickActivity#.tag#activity',
+ 'com.wisorg.wisedu.im.rongcloud.rongcon.RongConActivity#.tag#activity',
+ 'com.wisorg.wisedu.im.rongcloud.rongsubcustom.CustomSubConListActivity#.tag#activity',
+ 'com.wisorg.wisedu.im.rongcloud.rongcustom.CustomMemberMentionedActivity#.tag#activity',
+ 'com.wisorg.wisedu.classmate.publish.PictureSelectorActivity#.tag#activity',
+ 'com.wisorg.wisedu.common.MsgNotFoundActivity#.tag#activity',
+ 'com.chuanglan.shanyan_sdk.view.CmccLoginActivity#.tag#activity',
+ 'com.chuanglan.shanyan_sdk.view.ShanYanOneKeyActivity#.tag#activity',
+ 'com.chuanglan.shanyan_sdk.view.CTCCPrivacyProtocolActivity#.tag#activity',
+ 'com.wisorg.widget.gallery.PhotoActivity#.tag#activity',
+ 'com.wisedu.mampshell.QrcodeShowActivity#.tag#activity',
+ 'com.wisedu.mampshell.BaiduMapActivity#.tag#activity',
+ 'com.dongtu.store.activity.DTStorePackageListActivity#.tag#activity',
+ 'com.dongtu.store.activity.DTStoreAuthorHomepageActivity#.tag#activity',
+ 'com.dongtu.store.activity.DTStoreEmojiDetailActivity#.tag#activity',
+ 'com.dongtu.store.activity.DTStorePackageDetailActivity#.tag#activity',
+ 'com.dongtu.store.activity.DTStorePackageSettingActivity#.tag#activity',
+ 'com.dongtu.store.activity.DTStorePackageSortingActivity#.tag#activity',
+ 'com.dongtu.store.activity.DTStoreServiceDeclarationActivity#.tag#activity',
+ 'com.dongtu.sdk.activity.ImageDetail#.tag#activity',
+ 'com.dongtu.sdk.activity.DTWebViewActivity#.tag#activity',
+ 'com.kf5.sdk.system.image.ImageSelectorActivity#.tag#activity',
+ 'com.kf5.sdk.helpcenter.ui.HelpCenterActivity#.tag#activity',
+ 'com.kf5.sdk.helpcenter.ui.HelpCenterTypeActivity#.tag#activity',
+ 'com.kf5.sdk.helpcenter.ui.HelpCenterTypeDetailsActivity#.tag#activity',
+ 'com.kf5.sdk.helpcenter.ui.HelpCenterTypeChildActivity#.tag#activity',
+ 'com.kf5.sdk.ticket.ui.LookFeedBackActivity#.tag#activity',
+ 'com.kf5.sdk.ticket.ui.FeedBackDetailsActivity#.tag#activity',
+ 'com.kf5.sdk.system.ui.ImageActivity#.tag#activity',
+ 'com.kf5.sdk.ticket.ui.OrderAttributeActivity#.tag#activity',
+ 'com.kf5.sdk.ticket.ui.FeedBackActivity#.tag#activity',
+ 'com.kf5.sdk.im.ui.KF5ChatActivity#.tag#activity',
+ 'com.kf5.sdk.ticket.ui.RatingActivity#.tag#activity',
+ 'com.kf5.sdk.im.ui.AgentGroupChoseActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videojoiner.TCVideoJoinerActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videojoiner.TCVideoJoinerPreviewActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videojoiner.TCVideoJoinChooseActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videojoiner.TCVideoPreviewActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videorecord.TCVideoRecordActivity#.tag#activity',
+ 'com.tencent.liteav.demo.takephoto.TCTakePhotoActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videorecord.TCVideoRecordSmartActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videorecord.TCVideoSettingActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videorecord.TCRecordPreviewActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videoediter.TCVideoPickerActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videoediter.TCVideoEditerActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videoediter.TCVideoCutActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videoediter.TCVideoEffectActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videoediter.TCPictureJoinActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videoediter.TCEditPreviewActivity#.tag#activity',
+ 'com.tencent.qcloud.ugckit.module.effect.bgm.TCMusicActivity#.tag#activity',
+ 'com.wisorg.widget.crop.CropImage#.tag#activity',
+ 'com.wisedu.campushoy.common.scan.ui.CustomCaptureActivity#.tag#activity',
+ 'com.wisorg.widget.file.FileDisplayActivity#.tag#activity',
+ 'com.wisedu.campushoy.common.scan.ui.DefinedActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videouploader.videopublish.TCVideoPublishActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videouploader.videopublish.TCCompressActivity#.tag#activity',
+ 'com.tencent.liteav.demo.videouploader.videopublish.pic.TCPicturePublishActivity#.tag#activity',
+ 'com.tencent.liteav.demo.player.superplayer.SuperPlayerActivity#.tag#activity',
+ 'com.tencent.liteav.demo.player.VodPlayerActivity#.tag#activity',
+ 'com.tencent.liteav.demo.player.common.activity.QRCodeScanActivity#.tag#activity',
+ 'cn.org.bjca.signet.component.seal.activity.SignetSealApiActivity#.tag#activity',
+ 'cn.org.bjca.signet.component.core.activity.SignetCoreApiActivity#.tag#activity',
+ 'com.mob.guard.MobTranPullUpActivity#.tag#activity',
+ 'com.mob.id.MobIDActivity#.tag#activity',
+ 'com.mob.guard.MobTranPullLockActivity#.tag#activity',
+ 'com.mob.id.MobIDSYActivity#.tag#activity',
+ 'com.fzwsc.fanxi.vrlibrary.ui.MyVrVideoShow#.tag#activity',
+ 'com.fzwsc.fanxi.vrlibrary.ui.MyVrPicShow#.tag#activity',
+ 'com.lptiyu.tanke.activities.SchoolRunActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.school_run.MapRunActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.school_run.SinglePixelActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.school_run_record.RunRecordActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.activity_detail.ActivityDetailActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.schoolrunrank.SchoolRankTeacherActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.schoolrunrank.SchoolRankActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.schoolrunrank.SchoolRankNormalActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.school_grade.SchoolGradeActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.WebViewActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.change_run_zone.ChangeRunZoneActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.socialdetail.SocialDetailActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.imgpreview.ImagePreviewActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.SchoolRunRankRulesActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.setting.SettingActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.SetRunPermissionActivity#.tag#activity',
+ 'com.lptiyu.tanke.activities.school_run_record_detail.RunRecordDetailActivity#.tag#activity',
+ 'io.rong.imkit.plugin.location.AMapLocationActivity#.tag#activity',
+ 'io.rong.imkit.plugin.location.AMapLocationActivity2D#.tag#activity',
+ 'io.rong.imkit.plugin.location.AMapPreviewActivity#.tag#activity',
+ 'io.rong.imkit.plugin.location.AMapPreviewActivity2D#.tag#activity',
+ 'io.rong.imkit.plugin.location.AMapRealTimeActivity#.tag#activity',
+ 'io.rong.imkit.plugin.location.AMapRealTimeActivity2D#.tag#activity',
+ 'io.rong.imkit.plugin.location.SearchLocationActivity#.tag#activity',
+ 'io.rong.imkit.plugin.image.PictureSelectorActivity#.tag#activity',
+ 'io.rong.imkit.plugin.image.PicturePreviewActivity#.tag#activity',
+ 'io.rong.imkit.tools.RongWebviewActivity#.tag#activity',
+ 'io.rong.imkit.tools.CombineWebViewActivity#.tag#activity',
+ 'io.rong.imkit.widget.provider.TakingPicturesActivity#.tag#activity',
+ 'io.rong.imkit.activity.PicturePagerActivity#.tag#activity',
+ 'io.rong.imkit.activity.CombinePicturePagerActivity#.tag#activity',
+ 'io.rong.imkit.mention.MemberMentionedActivity#.tag#activity',
+ 'io.rong.imkit.activity.FileManagerActivity#.tag#activity',
+ 'io.rong.imkit.activity.FileListActivity#.tag#activity',
+ 'io.rong.imkit.activity.FilePreviewActivity#.tag#activity',
+ 'io.rong.imkit.activity.WebFilePreviewActivity#.tag#activity',
+ 'io.rong.imkit.activity.CSLeaveMessageActivity#.tag#activity',
+ 'io.rong.imkit.activity.GIFPreviewActivity#.tag#activity',
+ 'io.rong.imkit.activity.SelectConversationActivity#.tag#activity',
+ 'com.tencent.liteav.video.TXScreenCapture$TXScreenCaptureAssistantActivity#.tag#activity',
+ 'com.journeyapps.barcodescanner.CaptureActivity#.tag#activity',
+ 'com.blankj.utilcode.util.UtilsTransActivity4MainProcess#.tag#activity',
+ 'com.blankj.utilcode.util.UtilsTransActivity#.tag#activity',
+ 'com.sensorsdata.sf.ui.view.DialogActivity#.tag#activity',
+ 'com.igexin.sdk.PushActivity#.tag#activity',
+ 'com.igexin.sdk.GActivity#.tag#activity',
+ 'com.igexin.sdk.GetuiActivity#.tag#activity',
+ 'com.huawei.hms.hmsscankit.ScanKitActivity#.tag#activity',
+ 'com.tencent.qcloud.logutils.LogActivity#.tag#activity',
+ 'com.huawei.updatesdk.service.otaupdate.AppUpdateActivity#.tag#activity',
+ 'com.huawei.updatesdk.support.pm.PackageInstallerActivity#.tag#activity',
+ 'com.huawei.hms.activity.BridgeActivity#.tag#activity',
+ 'com.huawei.hms.activity.EnableServiceActivity#.tag#activity',
+ 'com.baidu.location.f#.tag#service',
+ 'com.wisorg.wisedu.utils.XiaomiBadgeIntentService#.tag#service',
+ 'com.wisorg.wisedu.appwidget.CourseService#.tag#service',
+ 'com.wisorg.wisedu.appwidget.MyRemoteViewsService#.tag#service',
+ 'com.amap.api.location.APSService#.tag#service',
+ 'com.wisorg.wisedu.push.GeTuiPushService#.tag#service',
+ 'com.wisorg.wisedu.push.GeTuiIntentService#.tag#service',
+ 'com.huawei.hms.support.api.push.service.HmsMsgService#.tag#service',
+ 'com.kf5.sdk.im.service.MessageService#.tag#service',
+ 'com.wisorg.sdk.audio.recorder.RecordService#.tag#service',
+ 'com.mob.guard.MobGuardPullUpService#.tag#service',
+ 'com.mob.id.MobIDService#.tag#service',
+ 'com.mob.MobACService#.tag#service',
+ 'com.lptiyu.tanke.services.RunService#.tag#service',
+ 'com.lptiyu.tanke.services.PlayerMusicService#.tag#service',
+ 'com.lptiyu.tanke.services.AliveJobService#.tag#service',
+ 'com.xuexiang.xupdate.service.DownloadService#.tag#service',
+ 'io.rong.imlib.ipc.RongService#.tag#service',
+ 'io.rong.push.rongpush.PushService#.tag#service',
+ 'com.blankj.utilcode.util.MessengerUtils$ServerService#.tag#service',
+ 'com.igexin.sdk.HmsPushMessageService#.tag#service',
+ 'com.igexin.sdk.PushService#.tag#service',
+ 'com.igexin.sdk.GService#.tag#service',
+ 'com.getui.gtc.GtcService#.tag#service',
+ 'com.xiaomi.mipush.sdk.PushMessageHandler#.tag#service',
+ 'com.xiaomi.mipush.sdk.MessageHandleService#.tag#service',
+ 'com.igexin.sdk.OppoPushService#.tag#service',
+ 'com.igexin.sdk.OppoAppPushService#.tag#service',
+ 'com.vivo.push.sdk.service.CommandClientService#.tag#service',
+ 'com.huawei.agconnect.core.ServiceDiscovery#.tag#service',
+ 'com.wisorg.wisedu.im.rongcloud.RongCloudXiaoMiReceiver#.tag#receiver',
+ 'com.tencent.liteav.demo.videouploader.videoupload.impl.TVCNetWorkStateReceiver#.tag#receiver',
+ 'io.rong.imlib.ConnectChangeReceiver#.tag#receiver',
+ 'io.rong.imlib.HeartbeatReceiver#.tag#receiver',
+ 'io.rong.push.rongpush.PushReceiver#.tag#receiver',
+ 'com.igexin.sdk.PushReceiver#.tag#receiver',
+ 'com.huawei.hms.support.api.push.PushMsgReceiver#.tag#receiver',
+ 'com.huawei.hms.support.api.push.PushReceiver#.tag#receiver',
+ 'com.igexin.sdk.MiuiPushReceiver#.tag#receiver',
+ 'com.igexin.sdk.VivoPushMessageReceiver#.tag#receiver',
+ 'androidx.core.content.FileProvider#.tag#provider#.tag#<provider '
+ 'android:name="androidx.core.content.FileProvider" android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.fileprovider" '
+ 'android:grantUriPermissions="true">\n'
+ '      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" '
+ 'android:resource="@7F140001"/>\n'
+ '    </provider>',
+ 'com.kf5.sdk.system.provider.PhotoFileProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.kf5.sdk.system.provider.PhotoFileProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.chosen.FileProvider" '
+ 'android:grantUriPermissions="true">\n'
+ '      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" '
+ 'android:resource="@7F140003"/>\n'
+ '    </provider>',
+ 'com.lptiyu.tanke.application.LpFileProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.lptiyu.tanke.application.LpFileProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.application.provider" '
+ 'android:grantUriPermissions="true">\n'
+ '      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" '
+ 'android:resource="@7F140004"/>\n'
+ '    </provider>',
+ 'com.lptiyu.tanke.application.LPContentProvider#.tag#provider#.tag#<provider '
+ 'android:theme="@7F120014" '
+ 'android:name="com.lptiyu.tanke.application.LPContentProvider" '
+ 'android:exported="false" android:multiprocess="true" '
+ 'android:authorities="com.wisedu.cpdaily.application.LPContentProvider"/>',
+ 'com.xuexiang.xupdate.utils.UpdateFileProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.xuexiang.xupdate.utils.UpdateFileProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.updateFileProvider" '
+ 'android:grantUriPermissions="true">\n'
+ '      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" '
+ 'android:resource="@7F14000D"/>\n'
+ '    </provider>',
+ 'androidx.lifecycle.ProcessLifecycleOwnerInitializer#.tag#provider#.tag#<provider '
+ 'android:name="androidx.lifecycle.ProcessLifecycleOwnerInitializer" '
+ 'android:exported="false" android:multiprocess="true" '
+ 'android:authorities="com.wisedu.cpdaily.lifecycle-process"/>',
+ 'com.blankj.utilcode.util.UtilsFileProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.blankj.utilcode.util.UtilsFileProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.utilcode.provider" '
+ 'android:grantUriPermissions="true">\n'
+ '      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" '
+ 'android:resource="@7F14000E"/>\n'
+ '    </provider>',
+ 'com.sensorsdata.analytics.android.sdk.data.SensorsDataContentProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.sensorsdata.analytics.android.sdk.data.SensorsDataContentProvider" '
+ 'android:enabled="true" android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.SensorsDataContentProvider"/>',
+ 'com.sensorsdata.sf.core.data.SensorsFocusContentProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.sensorsdata.sf.core.data.SensorsFocusContentProvider" '
+ 'android:enabled="true" android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.SensorsFocusContentProvider"/>',
+ 'com.getui.gtc.base.GtcProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.getui.gtc.base.GtcProvider" android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.getui.gtc.provider"/>',
+ 'com.huawei.hms.support.api.push.PushProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.huawei.hms.support.api.push.PushProvider" '
+ 'android:permission="com.wisedu.cpdaily.permission.PUSH_PROVIDER" '
+ 'android:readPermission="com.wisedu.cpdaily.permission.PUSH_PROVIDER" '
+ 'android:writePermission="com.wisedu.cpdaily.permission.PUSH_WRITE_PROVIDER" '
+ 'android:exported="true" '
+ 'android:authorities="com.wisedu.cpdaily.huawei.push.provider"/>',
+ 'com.huawei.hms.aaid.InitProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.huawei.hms.aaid.InitProvider" android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.aaidinitprovider" '
+ 'android:initOrder="500"/>',
+ 'com.huawei.hms.update.provider.UpdateProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.huawei.hms.update.provider.UpdateProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.hms.update.provider" '
+ 'android:grantUriPermissions="true"/>',
+ 'com.huawei.updatesdk.fileprovider.UpdateSdkFileProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.huawei.updatesdk.fileprovider.UpdateSdkFileProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.updateSdk.fileProvider" '
+ 'android:grantUriPermissions="true"/>',
+ 'com.huawei.hms.mlsdk.common.provider.MLInitializerProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.huawei.hms.mlsdk.common.provider.MLInitializerProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.MLInitializerProvider"/>',
+ 'com.huawei.hms.device.provider.CheckHmsProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.huawei.hms.device.provider.CheckHmsProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.hms.device.validate.spoofprovider" '
+ 'android:grantUriPermissions="false"/>',
+ 'com.huawei.agconnect.core.provider.AGConnectInitializeProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.huawei.agconnect.core.provider.AGConnectInitializeProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.AGCInitializeProvider"/>',
+ 'com.mob.MobProvider#.tag#provider#.tag#<provider '
+ 'android:name="com.mob.MobProvider" android:exported="false" '
+ 'android:multiprocess="true" '
+ 'android:authorities="com.wisedu.cpdaily.com.mob.MobProvider"/>',
+ 'cn.sharesdk.framework.utils.ShareSDKFileProvider#.tag#provider#.tag#<provider '
+ 'android:name="cn.sharesdk.framework.utils.ShareSDKFileProvider" '
+ 'android:exported="false" '
+ 'android:authorities="com.wisedu.cpdaily.cn.sharesdk.ShareSDKFileProvider" '
+ 'android:grantUriPermissions="true"/>',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'android.intent.action.gtpush#.tag#intent#.tag#activity',
+ 'android.intent.action.oppopush#.tag#intent#.tag#activity',
+ 'android.intent.action.MAIN#.tag#intent#.tag#activity',
+ 'com.tencent.smtt.tbs.video.PLAY#.tag#intent#.tag#activity',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'android.intent.action.VIEW#.tag#intent#.tag#activity',
+ 'com.tencent.liteav.demo.videojoiner#.tag#intent#.tag#activity',
+ 'android.intent.action.MAIN#.tag#intent#.tag#activity',
+ 'com.tencent.liteav.demo.videoediter#.tag#intent#.tag#activity',
+ 'android.intent.action.MAIN#.tag#intent#.tag#activity',
+ 'com.tencent.liteav.demo.videocut#.tag#intent#.tag#activity',
+ 'android.intent.action.MAIN#.tag#intent#.tag#activity',
+ 'com.tencent.liteav.demo.picturejoin#.tag#intent#.tag#activity',
+ 'android.intent.action.MAIN#.tag#intent#.tag#activity',
+ 'com.tencent.liteav.demo.videocompress#.tag#intent#.tag#activity',
+ 'android.intent.action.MAIN#.tag#intent#.tag#activity',
+ 'com.tencent.liteav.demo.play.action.float.click#.tag#intent#.tag#activity',
+ 'android.intent.action.MAIN#.tag#intent#.tag#activity',
+ 'com.mob.open.app_20000#.tag#intent#.tag#activity',
+ 'com.mob.id.app_30000#.tag#intent#.tag#activity',
+ 'com.mob.open.app_lk#.tag#intent#.tag#activity',
+ 'com.mob.id.app_lk#.tag#intent#.tag#activity',
+ 'io.rong.imkit.intent.action.webview#.tag#intent#.tag#activity',
+ 'io.rong.imkit.intent.action.combinewebview#.tag#intent#.tag#activity',
+ 'io.rong.imkit.intent.action.picturepagerview#.tag#intent#.tag#activity',
+ 'io.rong.imkit.intent.action.openfile#.tag#intent#.tag#activity',
+ 'io.rong.imkit.intent.action.openwebfile#.tag#intent#.tag#activity',
+ 'io.rong.imkit.intent.action.gifrview#.tag#intent#.tag#activity',
+ 'com.getui.sdk.action#.tag#intent#.tag#activity',
+ 'com.huawei.push.msg.NOTIFY_MSG#.tag#intent#.tag#service',
+ 'com.huawei.push.msg.PASSBY_MSG#.tag#intent#.tag#service',
+ 'com.kf5.sdk.im.service.MessageService#.tag#intent#.tag#service',
+ 'com.mob.intent.MOB_GUARD_SERVICE#.tag#intent#.tag#service',
+ 'com.mob.intent.MOB_ID_SERVICE#.tag#intent#.tag#service',
+ 'com.mob.service.action.MOB_AC_SERVICE#.tag#intent#.tag#service',
+ 'com.wisedu.cpdaily.messenger#.tag#intent#.tag#service',
+ 'com.huawei.push.action.MESSAGING_EVENT#.tag#intent#.tag#service',
+ 'com.getui.sdk.action#.tag#intent#.tag#service',
+ 'com.getui.gtc.sdk.service.action#.tag#intent#.tag#service',
+ 'com.coloros.mcs.action.RECEIVE_MCS_MESSAGE#.tag#intent#.tag#service',
+ 'com.heytap.mcs.action.RECEIVE_MCS_MESSAGE#.tag#intent#.tag#service',
+ 'com.heytap.msp.push.RECEIVE_MCS_MESSAGE#.tag#intent#.tag#service',
+ 'io.rong.push.intent.MESSAGE_ARRIVED#.tag#intent#.tag#receiver',
+ 'io.rong.push.intent.MI_MESSAGE_ARRIVED#.tag#intent#.tag#receiver',
+ 'io.rong.push.intent.MESSAGE_CLICKED#.tag#intent#.tag#receiver',
+ 'io.rong.push.intent.MI_MESSAGE_CLICKED#.tag#intent#.tag#receiver',
+ 'io.rong.push.intent.THIRD_PARTY_PUSH_STATE#.tag#intent#.tag#receiver',
+ 'android.net.conn.CONNECTIVITY_CHANGE#.tag#intent#.tag#receiver',
+ 'io.rong.push.intent.action.HEART_BEAT#.tag#intent#.tag#receiver',
+ 'android.net.conn.CONNECTIVITY_CHANGE#.tag#intent#.tag#receiver',
+ 'android.intent.action.USER_PRESENT#.tag#intent#.tag#receiver',
+ 'android.intent.action.ACTION_POWER_CONNECTED#.tag#intent#.tag#receiver',
+ 'android.intent.action.ACTION_POWER_DISCONNECTED#.tag#intent#.tag#receiver',
+ 'android.net.conn.CONNECTIVITY_CHANGE#.tag#intent#.tag#receiver',
+ 'android.intent.action.USER_PRESENT#.tag#intent#.tag#receiver',
+ 'com.huawei.intent.action.PUSH_DELAY_NOTIFY#.tag#intent#.tag#receiver',
+ 'com.huawei.intent.action.PUSH#.tag#intent#.tag#receiver',
+ 'com.huawei.android.push.intent.REGISTRATION#.tag#intent#.tag#receiver',
+ 'com.huawei.android.push.intent.RECEIVE#.tag#intent#.tag#receiver',
+ 'com.xiaomi.mipush.RECEIVE_MESSAGE#.tag#intent#.tag#receiver',
+ 'com.xiaomi.mipush.MESSAGE_ARRIVED#.tag#intent#.tag#receiver',
+ 'com.xiaomi.mipush.ERROR#.tag#intent#.tag#receiver',
+ 'com.vivo.pushclient.action.RECEIVE#.tag#intent#.tag#receiver',
+ 'android.hardware.camera#.tag#hardware',
+ 'android.hardware.camera.autofocus#.tag#hardware',
+ 'android.hardware.nfc.hce#.tag#hardware',
+ 'android.hardware.Camera#.tag#hardware',
+ 'android.hardware.autofocus#.tag#hardware',
+ 'android.hardware.sensor.accelerometer#.tag#hardware',
+ 'android.hardware.sensor.gyroscope#.tag#hardware',
+ 'android.hardware.sensor.stepcounter#.tag#hardware',
+ 'android.hardware.sensor.stepdetector#.tag#hardware',
+ 'android.hardware.camera.front#.tag#hardware',
+ 'android.hardware.camera.flash#.tag#hardware',
+ 'android.hardware.screen.landscape#.tag#hardware',
+ 'android.hardware.wifi#.tag#hardware',
+ ['invoke-virtual Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String; '
+  '[Ljava/lang/Class;)Ljava/lang/reflect/Method;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static a(Landroid/content/Context;)Z',
+  'invoke-virtual '
+  'Ljava/lang/reflect/Method;->setAccessible(Z)V#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static a(Landroid/content/Context;)Z',
+  'invoke-virtual Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object; '
+  '[Ljava/lang/Object;)Ljava/lang/Object;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static a(Landroid/content/Context;)Z',
+  'invoke-virtual Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String; '
+  '[Ljava/lang/Class;)Ljava/lang/reflect/Method;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static a(Landroid/content/Context;)Z',
+  'invoke-virtual '
+  'Ljava/lang/reflect/Method;->setAccessible(Z)V#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static a(Landroid/content/Context;)Z',
+  'invoke-virtual Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object; '
+  '[Ljava/lang/Object;)Ljava/lang/Object;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static a(Landroid/content/Context;)Z',
+  'invoke-virtual '
+  'Ljava/lang/Class;->getDeclaredConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static b()V',
+  'invoke-virtual '
+  'Ljava/lang/reflect/Constructor;->setAccessible(Z)V#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static b()V',
+  'invoke-virtual Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String; '
+  '[Ljava/lang/Class;)Ljava/lang/reflect/Method;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static b()V',
+  'invoke-virtual '
+  'Ljava/lang/reflect/Method;->setAccessible(Z)V#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static b()V',
+  'invoke-virtual Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object; '
+  '[Ljava/lang/Object;)Ljava/lang/Object;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static b()V',
+  'invoke-virtual '
+  'Ljava/lang/Class;->getDeclaredField(Ljava/lang/String;)Ljava/lang/reflect/Field;#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static b()V',
+  'invoke-virtual '
+  'Ljava/lang/reflect/Field;->setAccessible(Z)V#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method '
+  'public static b()V',
+  'invoke-virtual Ljava/lang/reflect/Field;->setBoolean(Ljava/lang/Object; '
+  'Z)V#.tag#api#.tag#Lcom/qihoo/util/c;#.tag#.method public static b()V'],
+ ['invoke-static '
+  'Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'protected final attachBaseContext(Landroid/content/Context;)V',
+  'invoke-static '
+  'Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'protected final attachBaseContext(Landroid/content/Context;)V',
+  'invoke-virtual Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String; '
+  '[Ljava/lang/Class;)Ljava/lang/reflect/Method;#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'protected final attachBaseContext(Landroid/content/Context;)V',
+  'invoke-virtual '
+  'Ljava/lang/reflect/Method;->setAccessible(Z)V#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'protected final attachBaseContext(Landroid/content/Context;)V',
+  'invoke-virtual Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object; '
+  '[Ljava/lang/Object;)Ljava/lang/Object;#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'protected final attachBaseContext(Landroid/content/Context;)V',
+  'invoke-static '
+  'Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'protected final attachBaseContext(Landroid/content/Context;)V',
+  'invoke-direct Ljava/lang/RuntimeException;-><init>(Ljava/lang/String; '
+  'Ljava/lang/Throwable;)V#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'protected final attachBaseContext(Landroid/content/Context;)V',
+  'invoke-virtual Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String; '
+  '[Ljava/lang/Class;)Ljava/lang/reflect/Method;#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'public final onCreate()V',
+  'invoke-virtual '
+  'Ljava/lang/reflect/Method;->setAccessible(Z)V#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'public final onCreate()V',
+  'invoke-virtual Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object; '
+  '[Ljava/lang/Object;)Ljava/lang/Object;#.tag#api#.tag#Lcom/stub/StubApp;#.tag#.method '
+  'public final onCreate()V']]

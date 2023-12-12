@@ -2,7 +2,7 @@
 
 ## Overview
 
-Welcome to the repository for "MalPurifier", a research initiative aimed at advancing Android malware detection using adversarial purification techniques to counter Evasion Attacks. This project represents our efforts to bring a new level of security to Android platforms.
+Welcome to the repository for "[MalPurifier](https://arxiv.org/abs/2312.06423)", a research initiative aimed at advancing Android malware detection using adversarial purification techniques to counter Evasion Attacks. This project represents our efforts to bring a new level of security to Android platforms.
 
 ## Current Stage
 

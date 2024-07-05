@@ -50,7 +50,8 @@ class GDKDEl1(BaseAttack):
 
     def __init__(self, benign_feat=None, bandwidth=20., penalty_factor=1000.,
                  is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(GDKDEl1, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
+        super(GDKDEl1, self).__init__(is_attacker, oblivion,
+                                      kappa, manipulation_x, omega, device)
         self.benign_feat = benign_feat
         self.bandwidth = bandwidth
         self.penalty_factor = penalty_factor
@@ -91,7 +92,8 @@ class GDKDEl1(BaseAttack):
             perturbation, direction = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
             perturbation[done] = 0.
-            adv_x = torch.clamp(adv_x + perturbation * direction, min=0., max=1.)
+            adv_x = torch.clamp(adv_x + perturbation *
+                                direction, min=0., max=1.)
         return adv_x
 
     def perturb(self, model, x, label=None,
@@ -115,7 +117,8 @@ class GDKDEl1(BaseAttack):
             _, done = self.get_loss(model, adv_x, label)
             if torch.all(done):
                 break
-            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+            # recompute the perturbation under other penalty factors
+            adv_x[~done] = x[~done]
             pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    steps,
                                    lambda_=self.lambda_
@@ -125,7 +128,8 @@ class GDKDEl1(BaseAttack):
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label)
             if verbose:
-                logger.info(f"gdkdel1: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
+                logger.info(
+                    f"gdkdel1: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
@@ -136,12 +140,14 @@ class GDKDEl1(BaseAttack):
         grad4insertion = (gradients > 0) * pos_insertion * gradients
         # api removal
         pos_removal = (adv_features > 0.5) * 1
-        grad4removal = (gradients <= 0) * (pos_removal & self.manipulation_x) * gradients
+        grad4removal = (gradients <= 0) * (pos_removal &
+                                           self.manipulation_x) * gradients
         # cope with the interdependent apis
         if self.is_attacker:
             # cope with the interdependent apis
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+            grad4removal[:, self.api_flag] += torch.sum(
+                gradients * checking_nonexist_api, dim=-1, keepdim=True)
 
         gradients = grad4removal + grad4insertion
 
@@ -152,12 +158,14 @@ class GDKDEl1(BaseAttack):
         # look for important position
         absolute_grad = torch.abs(gradients).reshape(features.shape[0], -1)
         _, position = torch.max(absolute_grad, dim=-1)
-        perturbations = F.one_hot(position, num_classes=absolute_grad.shape[-1]).double()
+        perturbations = F.one_hot(
+            position, num_classes=absolute_grad.shape[-1]).double()
         perturbations = perturbations.reshape(features.shape)
         directions = torch.sign(gradients) * (perturbations > 1e-6)
 
         if self.is_attacker:
-            perturbations += (torch.any(directions[:, self.api_flag] < 0, dim=-1, keepdim=True)) * checking_nonexist_api
+            perturbations += (torch.any(directions[:, self.api_flag]
+                              < 0, dim=-1, keepdim=True)) * checking_nonexist_api
             directions += perturbations * self.omega
         return perturbations, directions
 
@@ -178,7 +186,8 @@ class GDKDEl1(BaseAttack):
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
-                loss_no_reduction += self.lambda_ * (torch.clamp(tau - prob_g, max=self.kappa))
+                loss_no_reduction += self.lambda_ * \
+                    (torch.clamp(tau - prob_g, max=self.kappa))
             else:
                 loss_no_reduction += self.lambda_ * (tau - prob_g)
             done = (y_pred != label) & (prob_g <= tau)

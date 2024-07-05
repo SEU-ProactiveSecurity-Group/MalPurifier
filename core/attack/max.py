@@ -37,7 +37,8 @@ class Max(BaseAttack):
         注意:
         - 在初始化过程中，会首先检查`attack_list`是否包含至少一个攻击对象。
         """
-        super(Max, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)  # 调用父类的构造函数
+        super(Max, self).__init__(is_attacker, oblivion, kappa,
+                                  manipulation_x, omega, device)  # 调用父类的构造函数
         assert len(attack_list) > 0, '至少需要一个攻击方法。'  # 确保提供了至少一个攻击对象
         self.attack_list = attack_list  # 设置攻击列表
         self.varepsilon = varepsilon  # 设置varepsilon值
@@ -90,7 +91,7 @@ class Max(BaseAttack):
         for t in range(steps_max):
             # 计算还未完成攻击的样本数量
             num_sample_red = n - torch.sum(stop_flag)
-            
+
             # 如果所有样本都已完成攻击，结束循环
             if num_sample_red <= 0:
                 break
@@ -110,53 +111,59 @@ class Max(BaseAttack):
 
                 # 对于名为"Orthogonal"的攻击方法，进行特殊处理
                 if 'Orthogonal' in type(attack).__name__:
-                    pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label))
+                    pertbx.append(attack.perturb(
+                        model=model, x=adv_x[~stop_flag], label=red_label))
                 else:
                     pertbx.append(attack.perturb(model=model, x=adv_x[~stop_flag], label=red_label,
-                                                min_lambda_=1e-5,
-                                                max_lambda_=1e5,
-                                                ))
+                                                 min_lambda_=1e-5,
+                                                 max_lambda_=1e5,
+                                                 ))
             # 将所有攻击方法产生的扰动数据合并
             pertbx = torch.vstack(pertbx)
-
 
             # 不需要计算梯度，提高计算效率
             with torch.no_grad():
                 # 将真实标签复制若干次以匹配所有的攻击列表
                 red_label_ext = torch.cat([red_label] * len(self.attack_list))
-                
+
                 # 获取每种攻击方法产生的损失值和成功状态
                 loss, done = self.get_scores(model, pertbx, red_label_ext)
-                
+
                 # 调整损失和成功状态的形状以方便后续计算
-                loss = loss.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
-                done = done.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
-                
+                loss = loss.reshape(len(self.attack_list),
+                                    num_sample_red).permute(1, 0)
+                done = done.reshape(len(self.attack_list),
+                                    num_sample_red).permute(1, 0)
+
                 # 判断哪些样本至少有一种攻击方法成功
                 success_flag = torch.any(done, dim=-1)
-                
+
                 # 对于没有成功的样本，将其标记为1以进行后续处理
                 done[~torch.any(done, dim=-1)] = 1
-                
+
                 # 调整损失值，对于成功的攻击方法，损失值保持不变；对于失败的，损失值变为最小值
-                loss = (loss * done.to(torch.float)) + torch.min(loss) * (~done).to(torch.float)
-                
+                loss = (loss * done.to(torch.float)) + \
+                    torch.min(loss) * (~done).to(torch.float)
+
                 # 调整扰动数据的形状以方便后续计算
-                pertbx = pertbx.reshape(len(self.attack_list), num_sample_red, *red_n).permute([1, 0, *red_ind])
-                
+                pertbx = pertbx.reshape(
+                    len(self.attack_list), num_sample_red, *red_n).permute([1, 0, *red_ind])
+
                 # 选择造成最大损失的扰动数据
                 _, indices = loss.max(dim=-1)
-                adv_x[~stop_flag] = pertbx[torch.arange(num_sample_red), indices]
-                
+                adv_x[~stop_flag] = pertbx[torch.arange(
+                    num_sample_red), indices]
+
                 # 获取选中的扰动数据的损失值
                 a_loss = loss[torch.arange(num_sample_red), indices]
-                
+
                 # 复制当前的停止标志
                 pre_stop_flag = stop_flag.clone()
-                
+
                 # 更新停止标志，如果损失值变化很小或者某种攻击方法成功，则停止迭代
-                stop_flag[~stop_flag] = (torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
-                
+                stop_flag[~stop_flag] = (
+                    torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
+
                 # 更新前一个损失值
                 pre_loss[~pre_stop_flag] = a_loss
 
@@ -166,11 +173,11 @@ class Max(BaseAttack):
                 with torch.no_grad():
                     _, done = self.get_scores(model, adv_x, label)
                     # 打印攻击成功率
-                    logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
+                    logger.info(
+                        f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
 
             # 返回最终的扰动数据
             return adv_x
-
 
     def perturb_dae(self, predict_model, purifier, x, label=None, steps_max=5, min_lambda_=1e-5, max_lambda_=1e5, verbose=False, oblivion=False):
         """
@@ -202,7 +209,8 @@ class Max(BaseAttack):
         # 获取输入数据x在当前模型下的损失和完成状态
         with torch.no_grad():
             if not oblivion:
-                purified_x = purifier(x.detach().clone().float()).to(torch.double)
+                purified_x = purifier(
+                    x.detach().clone().float()).to(torch.double)
             else:
                 purified_x = x.detach().clone()
             loss, done = self.get_scores(predict_model, purified_x, label)
@@ -224,7 +232,7 @@ class Max(BaseAttack):
         for t in range(steps_max):
             # 计算还未完成攻击的样本数量
             num_sample_red = n - torch.sum(stop_flag)
-            
+
             # 如果所有样本都已完成攻击，结束循环
             if num_sample_red <= 0:
                 break
@@ -244,60 +252,68 @@ class Max(BaseAttack):
 
                 # 对于名为"Orthogonal"的攻击方法，进行特殊处理
                 if 'Orthogonal' in type(attack).__name__:
-                    pertbx.append(attack.perturb_dae(predict_model=predict_model, purifier=purifier, x=adv_x[~stop_flag], label=red_label, oblivion=oblivion))
+                    pertbx.append(attack.perturb_dae(predict_model=predict_model, purifier=purifier,
+                                  x=adv_x[~stop_flag], label=red_label, oblivion=oblivion))
                 else:
                     pertbx.append(attack.perturb_dae(model=predict_model, purifier=purifier, x=adv_x[~stop_flag], label=red_label,
-                                                min_lambda_=1e-5,
-                                                max_lambda_=1e5,
-                                                oblivion=oblivion
-                                                ))
+                                                     min_lambda_=1e-5,
+                                                     max_lambda_=1e5,
+                                                     oblivion=oblivion
+                                                     ))
 
             # 将所有攻击方法产生的扰动数据合并
             pertbx = torch.vstack(pertbx)
-
 
             # 不需要计算梯度，提高计算效率
             with torch.no_grad():
                 # 将真实标签复制若干次以匹配所有的攻击列表
                 red_label_ext = torch.cat([red_label] * len(self.attack_list))
-                
+
                 # 获取每种攻击方法产生的损失值和成功状态
                 if not oblivion:
-                    purified_pertbx = purifier(pertbx.detach().clone().float()).to(torch.double)
+                    purified_pertbx = purifier(
+                        pertbx.detach().clone().float()).to(torch.double)
                 else:
                     purified_pertbx = pertbx.detach().clone()
 
-                loss, done = self.get_scores(predict_model, purified_pertbx, red_label_ext)
-                
+                loss, done = self.get_scores(
+                    predict_model, purified_pertbx, red_label_ext)
+
                 # 调整损失和成功状态的形状以方便后续计算
-                loss = loss.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
-                done = done.reshape(len(self.attack_list), num_sample_red).permute(1, 0)
-                
+                loss = loss.reshape(len(self.attack_list),
+                                    num_sample_red).permute(1, 0)
+                done = done.reshape(len(self.attack_list),
+                                    num_sample_red).permute(1, 0)
+
                 # 判断哪些样本至少有一种攻击方法成功
                 success_flag = torch.any(done, dim=-1)
-                
+
                 # 对于没有成功的样本，将其标记为1以进行后续处理
                 done[~torch.any(done, dim=-1)] = 1
-                
+
                 # 调整损失值，对于成功的攻击方法，损失值保持不变；对于失败的，损失值变为最小值
-                loss = (loss * done.to(torch.float)) + torch.min(loss) * (~done).to(torch.float)
-                
+                loss = (loss * done.to(torch.float)) + \
+                    torch.min(loss) * (~done).to(torch.float)
+
                 # 调整扰动数据的形状以方便后续计算
-                pertbx = pertbx.reshape(len(self.attack_list), num_sample_red, *red_n).permute([1, 0, *red_ind])
-                
+                pertbx = pertbx.reshape(
+                    len(self.attack_list), num_sample_red, *red_n).permute([1, 0, *red_ind])
+
                 # 选择造成最大损失的扰动数据
                 _, indices = loss.max(dim=-1)
-                adv_x[~stop_flag] = pertbx[torch.arange(num_sample_red), indices]
-                
+                adv_x[~stop_flag] = pertbx[torch.arange(
+                    num_sample_red), indices]
+
                 # 获取选中的扰动数据的损失值
                 a_loss = loss[torch.arange(num_sample_red), indices]
-                
+
                 # 复制当前的停止标志
                 pre_stop_flag = stop_flag.clone()
-                
+
                 # 更新停止标志，如果损失值变化很小或者某种攻击方法成功，则停止迭代
-                stop_flag[~stop_flag] = (torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
-                
+                stop_flag[~stop_flag] = (
+                    torch.abs(pre_loss[~stop_flag] - a_loss) < self.varepsilon) | success_flag
+
                 # 更新前一个损失值
                 pre_loss[~pre_stop_flag] = a_loss
 
@@ -305,17 +321,20 @@ class Max(BaseAttack):
             if verbose:
                 # 评估最终的扰动数据的成功状态
                 with torch.no_grad():
-                    purified_adv_x = purifier(adv_x.detach().clone().float()).to(torch.double)
-                    _, done = self.get_scores(predict_model, purified_adv_x, label)
+                    purified_adv_x = purifier(
+                        adv_x.detach().clone().float()).to(torch.double)
+                    _, done = self.get_scores(
+                        predict_model, purified_adv_x, label)
                     # 打印攻击成功率
-                    logger.info(f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
+                    logger.info(
+                        f"max: attack effectiveness {done.sum().item() / x.size()[0] * 100}%.")
 
             # 返回最终的扰动数据
             return adv_x
 
-
     # 这个get_scores函数的主要目的是计算扰动数据在给定模型上的损失值，并判断模型对这些扰动数据的预测是否成功完成。
     # 对于具有检测器功能的模型，还会考虑模型的额外输出来决定预测的完成状态。
+
     def get_scores(self, model, pertb_x, label):
         """
         获取扰动数据在模型上的损失值和预测标签的完成状态。

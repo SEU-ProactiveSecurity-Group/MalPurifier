@@ -38,15 +38,16 @@ class BGA(BaseAttack):
     """
 
     def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(BGA, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
+        super(BGA, self).__init__(is_attacker, oblivion,
+                                  kappa, manipulation_x, omega, device)
         self.omega = None           # no interdependent apis if just api insertion is considered
         self.manipulation_z = None  # all apis are permitted to be insertable
         self.lambda_ = 1.
 
     def _perturb(self, model, x, label=None,
-             m=10,
-             lmda=1.,
-             use_sample=False):
+                 m=10,
+                 lmda=1.,
+                 use_sample=False):
         """
         扰动节点的特征向量。
 
@@ -64,7 +65,7 @@ class BGA(BaseAttack):
             平衡对手检测器重要性的惩罚因子。
         use_sample : bool, 默认为False
             是否使用随机的起始点。
-        
+
         返回:
         ----------
         worst_x : torch.FloatTensor
@@ -76,7 +77,8 @@ class BGA(BaseAttack):
             return []
 
         # 初始化
-        sqrt_m = torch.from_numpy(np.sqrt([x.size()[1]])).float().to(model.device)
+        sqrt_m = torch.from_numpy(
+            np.sqrt([x.size()[1]])).float().to(model.device)
         adv_x = x.clone()
         worst_x = x.detach().clone()
 
@@ -90,18 +92,19 @@ class BGA(BaseAttack):
         for t in range(m):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, lmda)
-            
+
             # 保存有效的扰动结果
             worst_x[done] = adv_x[done]
-            
+
             # 计算梯度
-            grads = torch.autograd.grad(loss.mean(), var_adv_x, allow_unused=True)
+            grads = torch.autograd.grad(
+                loss.mean(), var_adv_x, allow_unused=True)
             grad = grads[0].data
 
             # 计算更新
             x_update = (sqrt_m * (1. - 2. * adv_x) * grad >= torch.norm(
                 grad, 2, 1).unsqueeze(1).expand_as(adv_x)).float()
-            
+
             # 对特征向量进行扰动
             adv_x = xor_tensors(x_update, adv_x)
             adv_x = or_tensors(adv_x, x)
@@ -112,7 +115,6 @@ class BGA(BaseAttack):
 
         return worst_x
 
-
     def perturb(self, model, x, label=None,
                 steps=10,
                 min_lambda_=1e-5,
@@ -122,7 +124,7 @@ class BGA(BaseAttack):
                 verbose=False):
         """
         对输入数据x进行扰动，使其在给定模型上的输出发生改变。
-        
+
         参数:
         ----------
         model : PyTorch模型
@@ -143,7 +145,7 @@ class BGA(BaseAttack):
             用于调整lambda的基数。
         verbose : bool, 默认为False
             是否打印详细信息。
-            
+
         返回:
         ----------
         adv_x : torch.Tensor
@@ -172,10 +174,10 @@ class BGA(BaseAttack):
             if torch.all(done):
                 break
             pert_x = self._perturb(model, adv_x[~done], label[~done],
-                                steps,
-                                lmda=self.lambda_,
-                                use_sample=use_sample
-                                )
+                                   steps,
+                                   lmda=self.lambda_,
+                                   use_sample=use_sample
+                                   )
             adv_x[~done] = pert_x
             self.lambda_ *= base
 
@@ -185,6 +187,7 @@ class BGA(BaseAttack):
 
             # 如果设置了详细输出，打印攻击效果
             if verbose:
-                logger.info(f"BGA: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3f}%.")
+                logger.info(
+                    f"BGA: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3f}%.")
 
         return adv_x

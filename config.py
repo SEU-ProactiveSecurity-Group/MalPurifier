@@ -27,11 +27,12 @@ def parser_config():
     global config
     config.read_file(open(config_file))
 
+
 parser_config()
 
 logging.basicConfig(level=logging.INFO, filename=os.path.join(config_dir, time.strftime("%Y%m%d-%H%M%S") + ".log"), filemode="w",
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s',
                     datefmt='%Y/%m/%d %H:%M:%S')
 ErrorHandler = logging.StreamHandler()
-ErrorHandler.setFormatter(logging.Formatter('%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s'))
-
+ErrorHandler.setFormatter(logging.Formatter(
+    '%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s: %(message)s'))

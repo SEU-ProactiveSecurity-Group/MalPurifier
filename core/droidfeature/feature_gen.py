@@ -105,7 +105,8 @@ DANGEROUS_API_SIMLI_TAGS = [
 # handle the restricted APIs
 dir_path = path.dirname(path.realpath(__file__))
 dir_to_axplorer_permissions_mp = path.join(dir_path + '/res/permissions/')
-txt_file_paths = list(retrive_files_set(dir_to_axplorer_permissions_mp, '', 'txt'))
+txt_file_paths = list(retrive_files_set(
+    dir_to_axplorer_permissions_mp, '', 'txt'))
 sensitive_apis = []
 for txt_file_path in txt_file_paths:
     file_name = path.basename(txt_file_path)
@@ -114,14 +115,16 @@ for txt_file_path in txt_file_paths:
         for line in text_lines:
             api_name = line.split(' ')[0].strip()
             class_name, method_name = api_name.rsplit('.', 1)
-            api_name_smali = java_class_name2smali_name(class_name) + '->' + method_name
+            api_name_smali = java_class_name2smali_name(
+                class_name) + '->' + method_name
             sensitive_apis.append(api_name_smali)
     else:
         text_lines = read_txt(txt_file_path)
         for line in text_lines:
             api_name = line.split('::')[0].split('(')[0].strip()
             class_name, method_name = api_name.rsplit('.', 1)
-            api_name_smali = java_class_name2smali_name(class_name) + '->' + method_name
+            api_name_smali = java_class_name2smali_name(
+                class_name) + '->' + method_name
             sensitive_apis.append(api_name_smali)
 
 path_to_lib_type_1 = path.join(dir_path + '/res/liblist_threshold_10.txt')
@@ -130,7 +133,8 @@ Third_part_libraries = ['L' + lib_cnt.split(';')[0].strip('"').lstrip('/') for l
 
 paths_to_lib_type2 = retrive_files_set(dir_path + '/res/libraries', '', 'txt')
 for p in paths_to_lib_type2:
-    Third_part_libraries.extend([java_class_name2smali_name(lib) for lib in read_txt(p, 'r')])
+    Third_part_libraries.extend(
+        [java_class_name2smali_name(lib) for lib in read_txt(p, 'r')])
 
 TAG_SPLITTER = '#.tag#'
 
@@ -157,7 +161,7 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
     :param max_number_of_smali_files: integer, the maximum number of smali files (smail文件的最大数量)
     :param timeout: integer, the elapsed time in minutes (耗时、以分钟为单位)
     :param saving_path: string, a path directs to saving path (保存路径)
-    
+
     从APK文件中提取特征，包括危险的权限、可疑的意图操作、限制性API和危险API。
     """
 
@@ -166,10 +170,12 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
         raise ValueError("Expected a path, but got {}".format(type(apk_path)))
 
     if not path.exists(apk_path):
-        raise FileNotFoundError("Cannot find an apk file by following the path {}.".format(apk_path))
+        raise FileNotFoundError(
+            "Cannot find an apk file by following the path {}.".format(apk_path))
 
     if saving_path is None:
-        warnings.warn("Save the features in current direction:{}".format(getcwd()))
+        warnings.warn(
+            "Save the features in current direction:{}".format(getcwd()))
         saving_path = path.join(getcwd(), 'api-graph')
 
     # 读取并分析APK文件
@@ -177,47 +183,55 @@ def apk2features(apk_path, max_number_of_smali_files=10000, saving_path=None):
         apk_path = path.abspath(apk_path)
         a, d, dx = AnalyzeAPK(apk_path)  # a: app; d: dex; dx: analysis of dex
     except Exception as e:
-        raise ValueError("Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
+        raise ValueError(
+            "Fail to read and analyze the apk {}:{} ".format(apk_path, str(e)))
 
     # 1. 获取权限
     try:
         permission_list = get_permissions(a)
     except Exception as e:
-        raise ValueError("Fail to extract permissions {}:{} ".format(apk_path, str(e)))
+        raise ValueError(
+            "Fail to extract permissions {}:{} ".format(apk_path, str(e)))
 
     # 2. 获取组件（除了提供者）
     try:
         component_list = get_components(a)
     except Exception as e:
-        raise ValueError("Fail to extract components {}:{} ".format(apk_path, str(e)))
+        raise ValueError(
+            "Fail to extract components {}:{} ".format(apk_path, str(e)))
 
     # 3. 获取提供者
     try:
         provider_list = get_providers(a)
     except Exception as e:
-        raise ValueError("Fail to extract providers {}:{} ".format(apk_path, str(e)))
+        raise ValueError(
+            "Fail to extract providers {}:{} ".format(apk_path, str(e)))
 
     # 4. 获取意图操作
     try:
         intent_actions = get_intent_actions(a)
     except Exception as e:
-        raise ValueError("Fail to extract intents {}:{} ".format(apk_path, str(e)))
+        raise ValueError(
+            "Fail to extract intents {}:{} ".format(apk_path, str(e)))
 
     # 5. 获取硬件
     try:
         hardware_list = get_hardwares(a)
     except Exception as e:
-        raise ValueError("Fail to extract hardware {}:{} ".format(apk_path, str(e)))
+        raise ValueError(
+            "Fail to extract hardware {}:{} ".format(apk_path, str(e)))
 
     # 6. 获取API
     try:
         api_sequences = get_apis(d, max_number_of_smali_files)
     except Exception as e:
-        raise ValueError("Fail to extract apis {}:{} ".format(apk_path, str(e)))
+        raise ValueError(
+            "Fail to extract apis {}:{} ".format(apk_path, str(e)))
 
     # 将提取到的所有特征组合在一起
     features = []
-    features.extend(permission_list + component_list + provider_list + intent_actions + hardware_list)
+    features.extend(permission_list + component_list +
+                    provider_list + intent_actions + hardware_list)
     features.extend(api_sequences)
 
     # 将特征保存到磁盘
@@ -244,7 +258,7 @@ def get_permissions(app):
     """
     rtn_permssions = []
     # 获取 APK 文件中的自有权限
-    permissions = app.get_permissions() 
+    permissions = app.get_permissions()
     # 获取第三方请求的权限
     permissions += app.get_requested_third_party_permissions()
     for perm in permissions:
@@ -259,20 +273,21 @@ def get_components(app):
     """
     component_names = []
     manifest_xml = app.get_android_manifest_xml()
-    xml_dom = minidom.parseString(etree.tostring(manifest_xml, pretty_print=True))
-    
+    xml_dom = minidom.parseString(
+        etree.tostring(manifest_xml, pretty_print=True))
+
     activity_elements = xml_dom.getElementsByTagName(ACTIVITY)
     for activity in activity_elements:
         if activity.hasAttribute("android:name"):
             activity_name = activity.getAttribute("android:name")
             component_names.append(activity_name + TAG_SPLITTER + ACTIVITY)
-            
+
     service_elements = xml_dom.getElementsByTagName(SERVICE)
     for service in service_elements:
         if service.hasAttribute("android:name"):
             svc_name = service.getAttribute("android:name")
             component_names.append(svc_name + TAG_SPLITTER + SERVICE)
-            
+
     receive_elements = xml_dom.getElementsByTagName(RECEIVER)
     for receiver in receive_elements:
         if receiver.hasAttribute("android:name"):
@@ -282,19 +297,23 @@ def get_components(app):
     return component_names
 
 # 函数的目的是获取 APK 文件中的内容提供者（Content Providers）信息，并将这些内容提供者添加到一个名为 providers 的列表中。
+
+
 def get_providers(app):
     providers = []
     manifest_xml = app.get_android_manifest_xml()
-    xml_dom = minidom.parseString(etree.tostring(manifest_xml, pretty_print=True))
+    xml_dom = minidom.parseString(
+        etree.tostring(manifest_xml, pretty_print=True))
     providers_elements = xml_dom.getElementsByTagName("provider")
-    
+
     for provider in providers_elements:
         if provider.hasAttribute("android:name"):
             prov_name = provider.getAttribute("android:name")
             writer = io.StringIO()
             provider.writexml(writer)
             prov_extra_info = writer.getvalue()
-            providers.append(prov_name + TAG_SPLITTER + PROVIDER + TAG_SPLITTER + prov_extra_info)
+            providers.append(prov_name + TAG_SPLITTER +
+                             PROVIDER + TAG_SPLITTER + prov_extra_info)
     return providers
 
 
@@ -314,17 +333,19 @@ def get_intent_actions(app):
     "com.android.vending",
     "android.net", and
     "com.android"
-    
+
     :param app: androidguard.core.bytecodes.apk
     """
     actions = []
 
     manifest_xml = app.get_android_manifest_xml()
-    xml_dom = minidom.parseString(etree.tostring(manifest_xml, pretty_print=True))
+    xml_dom = minidom.parseString(
+        etree.tostring(manifest_xml, pretty_print=True))
 
     def _analyze_component(component_elements, component_name):
         for element in component_elements:
-            intent_filter_elements = element.getElementsByTagName('intent-filter')
+            intent_filter_elements = element.getElementsByTagName(
+                'intent-filter')
             for intent_element in intent_filter_elements:
                 # Handling the intent-filters that may have multiple actions
                 action_elements = intent_element.getElementsByTagName('action')
@@ -340,7 +361,8 @@ def get_intent_actions(app):
                         # writer = io.StringIO()
                         # action_parent.writexml(writer)
                         # action_extra_info = writer.getvalue()
-                        actions.append(action + TAG_SPLITTER + INTENT + TAG_SPLITTER + component_name)
+                        actions.append(action + TAG_SPLITTER +
+                                       INTENT + TAG_SPLITTER + component_name)
 
     # 1. activities
     activity_elements = xml_dom.getElementsByTagName('activity')
@@ -388,17 +410,20 @@ def get_apis(dexes, max_number_of_smali_files):
         smali_classes = dex.get_classes()
         for smali_cls in smali_classes:
             if len(apis_classwise) > max_number_of_smali_files:
-                return apis_classwise # ???
+                return apis_classwise  # ???
             smali_methods = smali_cls.get_methods()
             apis = []
             for smali_mth in smali_methods:
                 # class name + TAG_SPLITTER + .method + Modifier + method name + parameter type + return value type
                 # 遍历每个方法，并构造方法的头部信息（method_header）。
                 method_header = smali_mth.class_name + TAG_SPLITTER
-                method_header += '.method ' + smali_mth.access_flags_string + ' ' + smali_mth.name + smali_mth.proto
+                method_header += '.method ' + smali_mth.access_flags_string + \
+                    ' ' + smali_mth.name + smali_mth.proto
                 # 对于每个方法，获取其指令 smali_mth.get_instructions()
                 for instruction in smali_mth.get_instructions():
-                    smali_code = instruction.get_name() + ' { ' + instruction.get_output()  # on win32 platform, 'instruction.get_output()' triggers the memory exception 'exit code -1073741571 (0xC00000FD)' sometimes
+                    # on win32 platform, 'instruction.get_output()' triggers the memory exception 'exit code -1073741571 (0xC00000FD)' sometimes
+                    smali_code = instruction.get_name(
+                    ) + ' { ' + instruction.get_output()
                     # 如果找到调用，提取相关信息（如调用类型、类名、方法名等）
                     invoke_match = re.search(
                         r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) {(?P<invokeParam>([vp0-9,. ]*?)),? (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeParamType>(.*?))\)(?P<invokeReturnType>(.*?))$',
@@ -408,20 +433,22 @@ def get_apis(dexes, max_number_of_smali_files):
                     # 调用类型
                     invoke_type = invoke_match.group('invokeType')
                     # 类名、方法名
-                    class_name, method_name = invoke_match.group('invokeObject'), invoke_match.group('invokeMethod')
-                    proto = '(' + invoke_match.group('invokeParamType') + ')' + invoke_match.group('invokeReturnType')
-                    
+                    class_name, method_name = invoke_match.group(
+                        'invokeObject'), invoke_match.group('invokeMethod')
+                    proto = '(' + invoke_match.group('invokeParamType') + \
+                        ')' + invoke_match.group('invokeReturnType')
+
                     # todo: justify the method is not the type of overload
                     # note: androidguard provides the EncodedMethod type, which is indeed not helpful, sometimes it is problematic
                     # e.g., from now on (version 3.3.5), the encodedmethod is actually implemented in the parent class yet neglected by androidguard
-                    
+
                     # 检查调用的 API 是否是敏感 API（check_sensitive_api）或可疑 API（check_suspicious_api）。
                     # 如果是，则将 API 信息添加到 apis 列表中。
                     if check_sensitive_api(class_name + '->' + method_name) or \
                             check_suspicious_api(class_name + '->' + method_name):
                         api_info = invoke_type + ' ' + class_name + '->' + method_name + proto + \
-                                   TAG_SPLITTER + SYS_API + \
-                                   TAG_SPLITTER + method_header
+                            TAG_SPLITTER + SYS_API + \
+                            TAG_SPLITTER + method_header
                         apis.append(api_info)
             if len(apis) <= 0:
                 continue
@@ -436,18 +463,22 @@ def save_to_disk(data, saving_path):
 def read_from_disk(loading_path):
     return read_pickle(loading_path)
 
+
 '''
     这段代码定义了一个名为 get_feature_list 的函数，
     它接受一个特征列表作为输入参数，然后将其拆分为特征列表、特征信息列表和特征类型列表。
 '''
+
+
 def get_feature_list(feature):
     if not isinstance(feature, list):
-        raise TypeError("Expect a list or nested list, but got {}.".format(type(feature)))
+        raise TypeError(
+            "Expect a list or nested list, but got {}.".format(type(feature)))
 
     feature_list = []
     feature_info_list = []
     feature_type_list = []
-    
+
     for feat in feature:
         if isinstance(feat, str):  # manifest features
             feature_elements = feat.split(TAG_SPLITTER)
@@ -460,7 +491,7 @@ def get_feature_list(feature):
             feature_list.append(_feature)
             feature_type_list.append(_feature_type)
             feature_info_list.append(_feat_info)
-            
+
         elif isinstance(feat, list):  # APIs
             for api in feat:
                 feature_elements = api.split(TAG_SPLITTER)
@@ -469,7 +500,8 @@ def get_feature_list(feature):
                 feature_type_list.append(feature_elements[1])
                 feature_info_list.append(feature_elements[0])
         else:
-            raise ValueError("Expect String or List, but got {}.".format(type(feat)))
+            raise ValueError(
+                "Expect String or List, but got {}.".format(type(feat)))
     return feature_list, feature_info_list, feature_type_list
 
 
@@ -481,7 +513,8 @@ def get_api_name(api_info):
         r'^([ ]*?)(?P<invokeType>invoke\-([^ ]*?)) (?P<invokeObject>L(.*?);|\[L(.*?);)->(?P<invokeMethod>(.*?))\((?P<invokeArgument>(.*?))\)(?P<invokeReturn>(.*?))$',
         api_info)
     # 将提取到的调用对象和调用方法组合起来，以 '->' 分隔，生成 API 名称。
-    _api_name = invoke_match.group('invokeObject') + '->' + invoke_match.group('invokeMethod')
+    _api_name = invoke_match.group(
+        'invokeObject') + '->' + invoke_match.group('invokeMethod')
     return _api_name
 
 
@@ -494,11 +527,14 @@ def get_api_info(node_tag):
 
 # 这个 format_feature 函数的目的是对给定的特征列表进行处理
 # 并将其分成两个列表：non_api_feature_list 和 api_feature_list
+
+
 def format_feature(feature):
     # 检查输入的 feature 是否是列表类型，如果不是，抛出一个 TypeError 异常。
     if not isinstance(feature, list):
-        raise TypeError("Expect a list or nested list, but got {}.".format(type(feature)))
-    
+        raise TypeError(
+            "Expect a list or nested list, but got {}.".format(type(feature)))
+
     # 初始化两个空列表：non_api_feature_list 和 api_feature_list。
     non_api_feature_list = []
     api_feature_list = []
@@ -523,7 +559,8 @@ def format_feature(feature):
                 _api_name = get_api_name(api_info)
                 api_feature_list.append(_api_name)
         else:
-            raise ValueError("Expect String or List, but got {}.".format(type(feat)))
+            raise ValueError(
+                "Expect String or List, but got {}.".format(type(feat)))
     return non_api_feature_list, api_feature_list
 
 
@@ -557,7 +594,8 @@ def get_same_class_prefix(entry_node_list):
     assert isinstance(entry_node_list, list)
     if len(entry_node_list) <= 0:
         return ''
-    class_names = [a_node.split('.method')[0].rsplit('$')[0] for a_node in entry_node_list]
+    class_names = [a_node.split('.method')[0].rsplit('$')[0]
+                   for a_node in entry_node_list]
     a_class_name = class_names[0]
     n_names = a_class_name.count('/')
     for idx in range(n_names):
@@ -574,7 +612,7 @@ def get_same_class_prefix(entry_node_list):
 #         200000,
 #         "./abc.feat")
 #     print(rtn_str)
-    
+
 def _main():
     rtn_str = apk2features(
         '/home/chenzy/Android_Malware_Detection/pad4amd/APK_samples/base.apk',

@@ -35,7 +35,8 @@ class PGDl1(BaseAttack):
     """
 
     def __init__(self, is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(PGDl1, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
+        super(PGDl1, self).__init__(is_attacker, oblivion,
+                                    kappa, manipulation_x, omega, device)
         self.lambda_ = 1.
 
     def _perturb(self, model, x,  label=None,
@@ -57,19 +58,21 @@ class PGDl1(BaseAttack):
         adv_x = x
         worst_x = x.detach().clone()
         self.lambda_ = lambda_
-        self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
+        # we set a graph contains two apis at least
+        self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1
         model.eval()
         if "rnn" in model.model_save_path:
             model.train()
         if "lstm" in model.model_save_path:
-            model.train()                
+            model.train()
         for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
             loss, done = self.get_loss(model, var_adv_x, label, self.lambda_)
             worst_x[done] = adv_x[done]
             if torch.all(done):
                 break
-            grads = torch.autograd.grad(loss.mean(), var_adv_x, allow_unused=True)
+            grads = torch.autograd.grad(
+                loss.mean(), var_adv_x, allow_unused=True)
             if grads[0] is None:
                 # Handle the situation where the gradient is None.
                 # For example, you can set the gradient to zeros:
@@ -80,7 +83,8 @@ class PGDl1(BaseAttack):
             perturbation, direction = self.get_perturbation(grad, x, adv_x)
             # stop perturbing the examples that are successful to evade the victim
             perturbation[done] = 0.
-            adv_x = torch.clamp(adv_x + perturbation * direction, min=0., max=1.)
+            adv_x = torch.clamp(adv_x + perturbation *
+                                direction, min=0., max=1.)
         done = self.get_scores(model, adv_x, label)
         worst_x[done] = adv_x[done]
         return worst_x
@@ -116,16 +120,17 @@ class PGDl1(BaseAttack):
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if verbose:
-                logger.info(f"pgd l1: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                logger.info(
+                    f"pgd l1: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x
 
     def perturb_dae(self, model, purifier, x, label=None,
-                steps=10,
-                min_lambda_=1e-5,
-                max_lambda_=1e5,
-                base=10.,
-                verbose=False,
-                oblivion=False):
+                    steps=10,
+                    min_lambda_=1e-5,
+                    max_lambda_=1e5,
+                    base=10.,
+                    verbose=False,
+                    oblivion=False):
         """
         enhance attack
         """
@@ -138,8 +143,10 @@ class PGDl1(BaseAttack):
         adv_x = x.detach().clone().to(torch.double)
         while self.lambda_ <= max_lambda_:
             if not oblivion:
-                purified_adv = purifier(adv_x.detach().clone().float()).to(torch.double)
-                _, done = self.get_loss(model, purified_adv, label, self.lambda_)
+                purified_adv = purifier(
+                    adv_x.detach().clone().float()).to(torch.double)
+                _, done = self.get_loss(
+                    model, purified_adv, label, self.lambda_)
             else:
                 _, done = self.get_loss(model, adv_x, label, self.lambda_)
             if torch.all(done):
@@ -153,12 +160,13 @@ class PGDl1(BaseAttack):
             if not self.check_lambda(model):
                 break
         with torch.no_grad():
-            purified_adv = purifier(adv_x.detach().clone().float()).to(torch.double)
+            purified_adv = purifier(
+                adv_x.detach().clone().float()).to(torch.double)
             _, done = self.get_loss(model, purified_adv, label, self.lambda_)
             if verbose:
-                logger.info(f"pgd l1: attack effectiveness {done.sum().item() / x.size()[0]}.")
+                logger.info(
+                    f"pgd l1: attack effectiveness {done.sum().item() / x.size()[0]}.")
         return adv_x
-
 
     def get_perturbation(self, gradients, features, adv_features):
         # 1. mask paddings
@@ -170,11 +178,13 @@ class PGDl1(BaseAttack):
         grad4insertion = (gradients > 0) * pos_insertion * gradients
         #    2.2 api removal
         pos_removal = (adv_features > 0.5) * 1
-        grad4removal = (gradients <= 0) * (pos_removal & self.manipulation_x) * gradients
+        grad4removal = (gradients <= 0) * (pos_removal &
+                                           self.manipulation_x) * gradients
         if self.is_attacker:
             #     2.2.1 cope with the interdependent apis
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+            grad4removal[:, self.api_flag] += torch.sum(
+                gradients * checking_nonexist_api, dim=-1, keepdim=True)
 
         gradients = grad4removal + grad4insertion
 
@@ -185,12 +195,14 @@ class PGDl1(BaseAttack):
         # 4. look for important position
         absolute_grad = torch.abs(gradients).reshape(features.shape[0], -1)
         _, position = torch.max(absolute_grad, dim=-1)
-        perturbations = F.one_hot(position, num_classes=absolute_grad.shape[-1]).double()
+        perturbations = F.one_hot(
+            position, num_classes=absolute_grad.shape[-1]).double()
         perturbations = perturbations.reshape(features.shape)
         directions = torch.sign(gradients) * (perturbations > 1e-6)
 
         # 5. tailor the interdependent apis
         if self.is_attacker:
-            perturbations += (torch.any(directions[:, self.api_flag] < 0, dim=-1, keepdim=True)) * checking_nonexist_api
+            perturbations += (torch.any(directions[:, self.api_flag]
+                              < 0, dim=-1, keepdim=True)) * checking_nonexist_api
             directions += perturbations * self.omega
         return perturbations, directions

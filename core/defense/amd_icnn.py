@@ -27,6 +27,7 @@ logger.addHandler(ErrorHandler)
 # 这段代码定义了一个进阶的恶意软件检测器类，该类使用输入凸神经网络（ICNN）结构。
 # 其主要目标是为了提供一个能够检测恶意软件的高级模型，并对其内部的神经网络结构进行相应的优化与调整。
 
+
 class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
     # 初始化函数
     def __init__(self, md_nn_model, input_size, n_classes, ratio=0.98,
@@ -34,7 +35,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         # 调用父类的初始化函数
         nn.Module.__init__(self)
         DetectorTemplate.__init__(self)
-        
+
         # 设置输入大小、类别数、比例、设备和名称等属性
         self.input_size = input_size
         self.n_classes = n_classes
@@ -43,7 +44,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         self.device = device
         self.name = name
         self.parse_args(**kwargs)
-        
+
         # 检查md_nn_model是否是nn.Module的实例
         if isinstance(md_nn_model, nn.Module):
             self.md_nn_model = md_nn_model
@@ -57,7 +58,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
                                                    **kwargs)
             # 警告使用者：使用了自定义的基于NN的恶意软件检测器
             warnings.warn("Use a self-defined NN-based malware detector")
-        
+
         # 检查模型是否有'smooth'属性
         if hasattr(self.md_nn_model, 'smooth'):
             # 如果模型不是平滑的，将ReLU替换为SELU
@@ -70,65 +71,70 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             for name, child in self.md_nn_model.named_children():
                 if isinstance(child, nn.ReLU):
                     self.md_nn_model._modules['relu'] = nn.SELU()
-        
+
         # 将模型移动到指定的设备上
         self.md_nn_model = self.md_nn_model.to(self.device)
 
         # 输入凸神经网络
         self.non_neg_dense_layers = []
-        
+
         # 至少需要一个隐藏层
         if len(self.dense_hidden_units) < 1:
             raise ValueError("Expect at least one hidden layer.")
-        
+
         # 创建非负的密集层
         for i in range(len(self.dense_hidden_units[0:-1])):
             self.non_neg_dense_layers.append(nn.Linear(self.dense_hidden_units[i],
                                                        self.dense_hidden_units[i + 1],
                                                        bias=False))
-        self.non_neg_dense_layers.append(nn.Linear(self.dense_hidden_units[-1], 1, bias=False))
-        
+        self.non_neg_dense_layers.append(
+            nn.Linear(self.dense_hidden_units[-1], 1, bias=False))
+
         # 注册非负的密集层
         for idx_i, dense_layer in enumerate(self.non_neg_dense_layers):
             self.add_module('non_neg_layer_{}'.format(idx_i), dense_layer)
 
         # 创建密集层
         self.dense_layers = []
-        self.dense_layers.append(nn.Linear(self.input_size, self.dense_hidden_units[0]))
+        self.dense_layers.append(
+            nn.Linear(self.input_size, self.dense_hidden_units[0]))
         for i in range(len(self.dense_hidden_units[1:])):
-            self.dense_layers.append(nn.Linear(self.input_size, self.dense_hidden_units[i]))
+            self.dense_layers.append(
+                nn.Linear(self.input_size, self.dense_hidden_units[i]))
         self.dense_layers.append(nn.Linear(self.input_size, 1))
-        
+
         # 注册密集层
         for idx_i, dense_layer in enumerate(self.dense_layers):
             self.add_module('layer_{}'.format(idx_i), dense_layer)
 
         # 创建参数tau并设置为不需要梯度
-        self.tau = nn.Parameter(torch.zeros([1, ], device=self.device), requires_grad=False)
+        self.tau = nn.Parameter(torch.zeros(
+            [1, ], device=self.device), requires_grad=False)
 
         # 设置模型的保存路径
         self.model_save_path = path.join(config.get('experiments', 'amd_icnn') + '_' + self.name,
                                          'model.pth')
         # 打印模型的结构信息
-        logger.info('========================================icnn model architecture==============================')
+        logger.info(
+            '========================================icnn model architecture==============================')
         logger.info(self)
-        logger.info('===============================================end==========================================')
-
+        logger.info(
+            '===============================================end==========================================')
 
     def parse_args(self,
-                dense_hidden_units=None,  # 密集层隐藏单元的列表
-                dropout=0.6,               # dropout率
-                alpha_=0.2,                # alpha参数
-                **kwargs                   # 其他关键字参数
-                ):
+                   dense_hidden_units=None,  # 密集层隐藏单元的列表
+                   dropout=0.6,               # dropout率
+                   alpha_=0.2,                # alpha参数
+                   **kwargs                   # 其他关键字参数
+                   ):
         # 如果没有提供密集层的隐藏单元，则使用默认的[200, 200]
         if dense_hidden_units is None:
             self.dense_hidden_units = [200, 200]
-            
+
         # 如果提供的密集层隐藏单元是列表形式，则直接赋值
         elif isinstance(dense_hidden_units, list):
             self.dense_hidden_units = dense_hidden_units
-            
+
         # 如果提供的不是列表，则抛出类型错误
         else:
             raise TypeError("Expect a list of hidden units.")
@@ -155,30 +161,29 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         for i, dense_layer in enumerate(self.dense_layers):
             # 初始化x_add列表，用于存储中间结果
             x_add = []
-            
+
             # 将输入x通过当前的密集层
             x1 = dense_layer(x)
-            
+
             # 将结果添加到x_add列表中
             x_add.append(x1)
-            
+
             # 如果prev_x不为None，表示不是第一个密集层
             if prev_x is not None:
                 # 将前一个x通过非负密集层
                 x2 = self.non_neg_dense_layers[i - 1](prev_x)
                 # 将结果添加到x_add列表中
                 x_add.append(x2)
-                
+
             # 将x_add列表中的所有元素求和
             prev_x = torch.sum(torch.stack(x_add, dim=0), dim=0)
-            
+
             # 如果不是最后一个密集层，则应用SELU激活函数
             if i < len(self.dense_layers):
                 prev_x = F.selu(prev_x)
-                
+
         # 改变输出的形状并返回
         return prev_x.reshape(-1)
-
 
     def forward(self, x):
         return self.forward_f(x), self.forward_g(x)
@@ -225,7 +230,8 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             fnr = fn / float(tp + fn)
             # 计算F1分数
             f1 = f1_score(_y_true, _y_pred, average='binary')
-            logger.info("假阴性率(FNR)为 {:.5f}%, 假阳性率(FPR)为 {:.5f}%, F1分数为 {:.5f}%".format(fnr * 100, fpr * 100, f1 * 100))
+            logger.info("假阴性率(FNR)为 {:.5f}%, 假阳性率(FPR)为 {:.5f}%, F1分数为 {:.5f}%".format(
+                fnr * 100, fpr * 100, f1 * 100))
 
         # 对真实标签和预测标签进行评估
         measurement(y_true, y_pred)
@@ -246,40 +252,40 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
 
         return rtn_value
 
-
     # 定义推断函数
+
     def inference(self, test_data_producer):
         # 初始化三个空列表：y_cent用于存放预测的类别中心值，x_prob用于存放预测的概率值，gt_labels用于存放真实标签。
         y_cent, x_prob = [], []
         gt_labels = []
-        
+
         # 将模型设置为评估模式
         self.eval()
-        
+
         # 使用torch.no_grad()来指示PyTorch在此上下文中不计算梯度，这在推断时是常见的做法，可以节省内存并加速计算。
         with torch.no_grad():
             # 遍历测试数据生成器中的每一批数据
             for x, y in test_data_producer:
                 # 将数据转移到设备上，并确保x的数据类型为double，y的数据类型为long
                 x, y = utils.to_device(x.double(), y.long(), self.device)
-                
+
                 # 通过前向传播得到logits_f和logits_g
                 logits_f, logits_g = self.forward(x)
-                
+
                 # 使用softmax函数计算logits_f的概率分布，并将其添加到y_cent列表中
                 y_cent.append(torch.softmax(logits_f, dim=-1))
-                
+
                 # 将logits_g添加到x_prob列表中
                 x_prob.append(logits_g)
-                
+
                 # 将真实标签添加到gt_labels列表中
                 gt_labels.append(y)
-        
+
         # 使用torch.cat将三个列表中的所有Tensor沿第0维度拼接起来
         gt_labels = torch.cat(gt_labels, dim=0)
         y_cent = torch.cat(y_cent, dim=0)
         x_prob = torch.cat(x_prob, dim=0)
-        
+
         # 返回三个Tensor：y_cent, x_prob, gt_labels
         return y_cent, x_prob, gt_labels
 
@@ -316,23 +322,26 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         for i, (x, y) in enumerate(test_data_producer):
             x, y = utils.to_tensor(x, y, self.device)  # 将输入和标签转为张量
             x.requires_grad = True  # 为输入x设置梯度属性，以便后续计算梯度
-            base_lines = torch.zeros_like(x, dtype=torch.double, device=self.device)  # 设置基线为全零
+            base_lines = torch.zeros_like(
+                x, dtype=torch.double, device=self.device)  # 设置基线为全零
             base_lines[:, -1] = 1  # 修改基线的最后一个值为1
             # 计算分类任务的属性重要性
             attribution_bs = ig_cls.attribute(x,
                                               baselines=base_lines,
                                               target=1)  # target=1意味着我们计算对类别1的属性重要性
-            attributions_cls.append(attribution_bs.clone().detach().cpu().numpy())
+            attributions_cls.append(
+                attribution_bs.clone().detach().cpu().numpy())
 
             # 计算其他任务的属性重要性
             attribution_bs = ig_de.attribute(x,
                                              baselines=base_lines
                                              )
-            attributions_de.append(attribution_bs.clone().detach().cpu().numpy())
-        
+            attributions_de.append(
+                attribution_bs.clone().detach().cpu().numpy())
+
         # 将所有批次的结果合并为一个数组
         return np.vstack(attributions_cls), np.vstack(attributions_de)
-    
+
     def inference_batch_wise(self, x):
         """
         返回分类的概率和g模型的输出。
@@ -343,10 +352,8 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         # 对f模型的输出进行softmax操作以获得分类概率，并将结果转移到CPU上
         return torch.softmax(logits_f, dim=-1).detach().cpu().numpy(), logits_g.detach().cpu().numpy()
 
-
     def get_tau_sample_wise(self, y_pred=None):
         return self.tau  # 返回tau，即决策阈值
-
 
     def indicator(self, x_prob, y_pred=None):
         """
@@ -354,7 +361,8 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         """
         # print("self.tau:", self.tau)
         if isinstance(x_prob, np.ndarray):  # 判断输入是否为numpy数组
-            x_prob = torch.tensor(x_prob, device=self.device)  # 转换numpy数组为torch.Tensor
+            # 转换numpy数组为torch.Tensor
+            x_prob = torch.tensor(x_prob, device=self.device)
             # 判断每个样本的概率是否小于或等于tau，并返回结果
             return (x_prob <= self.tau).cpu().numpy()
         elif isinstance(x_prob, torch.Tensor):  # 判断输入是否为torch.Tensor
@@ -368,7 +376,7 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
     def get_threshold(self, validation_data_producer, ratio=None):
         """
         获取用于对抗检测的阈值。
-        
+
         参数:
         --------
         validation_data_producer : Object
@@ -380,14 +388,15 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         self.eval()  # 将模型设置为评估模式
         # 如果未提供ratio，则使用self.ratio作为默认值
         ratio = ratio if ratio is not None else self.ratio
-        
+
         # 断言确保ratio的值在[0,1]范围内
         assert 0 <= ratio <= 1
         probabilities = []  # 用于存储模型输出的概率值
         with torch.no_grad():  # 在不计算梯度的情况下
             for x_val, y_val in validation_data_producer:  # 从验证数据生成器中获取数据
                 # 将输入数据和标签转换为适当的数据类型，并移动到指定的设备上
-                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device)
+                x_val, y_val = utils.to_tensor(
+                    x_val.double(), y_val.long(), self.device)
                 # 获取g模型的输出
                 x_logits = self.forward_g(x_val)
                 # 将模型输出添加到概率列表中
@@ -399,7 +408,6 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             assert i >= 0  # 确保i是一个有效的索引
             # 设置模型的阈值tau为s[i]，即比率确定的阈值
             self.tau[0] = s[i]
-
 
     def reset_threshold(self):
         """
@@ -448,11 +456,10 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         # 结合两种损失，使用beta_1和beta_2作为权重
         return beta_1 * F_ + beta_2 * G
 
-
     # 这段代码描述了训练过程。它首先在每个时期开始时对模型进行训练，然后对每一个批次的数据进行训练。
     # 这里的亮点是它还生成了带有椒盐噪声的数据，并对其进行了分类。
     # 最后，它计算了每个批次的损失和准确率，并可能将其记录在日志中。
-    
+
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., verbose=True):
         """
         训练恶意软件和对抗检测器，根据验证结果选择最佳模型。
@@ -472,12 +479,13 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         verbose: 布尔值
             是否显示详细日志，默认为True。
         """
-        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.parameters(), lr=lr,
+                               weight_decay=weight_decay)
         best_avg_acc = 0.  # 初始化最佳平均准确率
         best_epoch = 0
         total_time = 0.  # 累计训练时间
         nbatches = len(train_data_producer)
-        
+
         # 开始训练
         for i in range(epochs):
             self.train()  # 将模型设为训练模式
@@ -486,13 +494,16 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
             # 迭代训练批次数据
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
                 # 数据移动到指定设备
-                x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
-                
+                x_train, y_train = utils.to_device(
+                    x_train.double(), y_train.long(), self.device)
+
                 # 为g网络生成数据
                 # 1. 添加椒盐噪声
-                x_train_noises = torch.clamp(x_train + utils.psn(x_train, np.random.uniform(0, 0.5)), min=0., max=1.)
+                x_train_noises = torch.clamp(
+                    x_train + utils.psn(x_train, np.random.uniform(0, 0.5)), min=0., max=1.)
                 x_train_ = torch.cat([x_train, x_train_noises], dim=0)
-                y_train_ = torch.cat([torch.zeros(x_train.shape[:1]), torch.ones(x_train.shape[:1])]).double().to(self.device)
+                y_train_ = torch.cat([torch.zeros(x_train.shape[:1]), torch.ones(
+                    x_train.shape[:1])]).double().to(self.device)
                 idx = torch.randperm(y_train_.shape[0])
                 x_train_ = x_train_[idx]
                 y_train_ = y_train_[idx]
@@ -502,62 +513,72 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
                 optimizer.zero_grad()
                 logits_f = self.forward_f(x_train)
                 logits_g = self.forward_g(x_train_)
-                loss_train = self.customize_loss(logits_f, y_train, logits_g, y_train_)
+                loss_train = self.customize_loss(
+                    logits_f, y_train, logits_g, y_train_)
                 loss_train.backward()
                 optimizer.step()
-                
+
                 # 约束条件
                 constraint = utils.NonnegWeightConstraint()
                 for name, module in self.named_modules():
                     if 'non_neg_layer' in name:
                         module.apply(constraint)
-                
+
                 total_time = total_time + time.time() - start_time
-                
+
                 # 计算准确率
-                acc_f_train = (logits_f.argmax(1) == y_train).sum().item() / x_train.size()[0]
-                acc_g_train = ((F.sigmoid(logits_g) >= 0.5) == y_train_).sum().item() / x_train_.size()[0]
-                
+                acc_f_train = (logits_f.argmax(
+                    1) == y_train).sum().item() / x_train.size()[0]
+                acc_g_train = ((F.sigmoid(logits_g) >= 0.5) ==
+                               y_train_).sum().item() / x_train_.size()[0]
+
                 # 更新记录
                 losses.append(loss_train.item())
                 accuracies.append(acc_f_train)
                 accuracies.append(acc_g_train)
-                
+
                 # 如果需要，打印详细日志
                 if verbose:
                     mins, secs = int(total_time / 60), int(total_time % 60)
-                    logger.info(f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
-            
+                    logger.info(
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(
+                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_f_train * 100:.2f}% & {acc_g_train * 100:.2f}%.')
+
             # 设置模型为评估模式
             self.eval()
-            
+
             # 初始化一个列表用于保存每批验证数据的准确率
             avg_acc_val = []
-            
+
             # 禁用梯度计算，以加速计算并减少内存使用
             with torch.no_grad():
                 for x_val, y_val in validation_data_producer:
                     # 数据移到指定设备
-                    x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
-                    
+                    x_val, y_val = utils.to_device(
+                        x_val.double(), y_val.long(), self.device)
+
                     # 为g网络生成数据（带有椒盐噪声）
-                    x_val_noises = torch.clamp(x_val + utils.psn(x_val, np.random.uniform(0, 0.5)), min=0., max=1.)
+                    x_val_noises = torch.clamp(
+                        x_val + utils.psn(x_val, np.random.uniform(0, 0.5)), min=0., max=1.)
                     x_val_ = torch.cat([x_val, x_val_noises], dim=0)
-                    y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(x_val.shape[:1])]).long().to(self.device)
-                    
+                    y_val_ = torch.cat([torch.zeros(x_val.shape[:1]), torch.ones(
+                        x_val.shape[:1])]).long().to(self.device)
+
                     # 获取预测的标签
                     logits_f = self.forward_f(x_val)
                     logits_g = self.forward_g(x_val_)
-                    
+
                     # 计算f网络的准确率
-                    acc_val = (logits_f.argmax(1) == y_val).sum().item() / x_val.size()[0]
+                    acc_val = (logits_f.argmax(1) ==
+                               y_val).sum().item() / x_val.size()[0]
                     avg_acc_val.append(acc_val)
-                    
+
                     # 计算g网络的准确率
-                    acc_val_g = ((F.sigmoid(logits_g) >= 0.5) == y_val_).sum().item() / x_val_.size()[0]
+                    acc_val_g = ((F.sigmoid(logits_g) >= 0.5) ==
+                                 y_val_).sum().item() / x_val_.size()[0]
                     avg_acc_val.append(acc_val_g)
-                
+
                 # 计算平均准确率
                 avg_acc_val = np.mean(avg_acc_val)
 
@@ -574,8 +595,10 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
 
             # 如果需要，显示训练和验证的详细信息
             if verbose:
-                logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
-                logger.info(f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
+                logger.info(
+                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                logger.info(
+                    f'Validation accuracy: {avg_acc_val * 100:.2f} | The best validation accuracy: {best_avg_acc * 100:.2f} at epoch: {best_epoch}')
 
     def load(self):
         # load model
@@ -595,4 +618,3 @@ class AdvMalwareDetectorICNN(nn.Module, DetectorTemplate):
         # }, self.model_save_path
         # )
         torch.save(self.state_dict(), self.model_save_path)
-

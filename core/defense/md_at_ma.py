@@ -56,7 +56,8 @@ class MaxAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path  # 更新模型内部的保存路径
         # 在日志中记录所使用的对抗攻击的类型
-        logger.info("Adversarial training incorporating the attack {}".format(type(self.attack).__name__))
+        logger.info("Adversarial training incorporating the attack {}".format(
+            type(self.attack).__name__))
 
     # 这个fit方法使用对抗训练策略来训练恶意软件检测模型。其主要流程包括在每个训练迭代中产生对抗样本，
     # 然后用这些对抗样本来训练模型。验证部分则是用来评估模型在对抗样本上的性能，并据此选择最佳模型。
@@ -80,12 +81,13 @@ class MaxAdvTraining(object):
         verbose: Boolean, 是否显示详细信息
         """
         # 初始化优化器
-        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.model.parameters(),
+                               lr=lr, weight_decay=weight_decay)
         total_time = 0.
         nbatches = len(train_data_producer)
-        
+
         logger.info("Max对抗训练开始 ...")
-        
+
         # 初始化最佳验证准确率、对抗准确率和最佳轮次
         best_acc_val = 0.
         acc_val_adv_be = 0.
@@ -102,7 +104,8 @@ class MaxAdvTraining(object):
             # 遍历训练数据
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
                 # 将数据转换为适合模型的张量格式
-                x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)
+                x_batch, y_batch = utils.to_tensor(
+                    x_batch.double(), y_batch.long(), self.model.device)
 
                 # 获取当前批次的数据量
                 batch_size = x_batch.shape[0]
@@ -114,7 +117,8 @@ class MaxAdvTraining(object):
                 # 如果指定了下采样比率，对恶意数据进行下采样
                 if 0. < under_sampling_ratio < 1.:
                     n_mal = mal_x_batch.shape[0]
-                    n_mal_sampling = int(under_sampling_ratio * n_mal) if int(under_sampling_ratio * n_mal) > 1 else 1
+                    n_mal_sampling = int(
+                        under_sampling_ratio * n_mal) if int(under_sampling_ratio * n_mal) > 1 else 1
                     idx_sampling = random.sample(range(n_mal), n_mal_sampling)
                     mal_x_batch, mal_y_batch = mal_x_batch[idx_sampling], mal_y_batch[idx_sampling]
 
@@ -127,7 +131,8 @@ class MaxAdvTraining(object):
                 self.model.eval()
 
                 # 执行对抗性攻击
-                pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch, **self.attack_param)
+                pertb_mal_x = self.attack.perturb(
+                    self.model, mal_x_batch, mal_y_batch, **self.attack_param)
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
                 total_time += time.time() - start_time
 
@@ -142,8 +147,11 @@ class MaxAdvTraining(object):
                 logits = self.model.forward(x_batch)
 
                 # 计算损失，分为原始数据损失和对抗数据损失
-                loss_train = self.model.customize_loss(logits[:batch_size], y_batch[:batch_size])
-                loss_train += beta * self.model.customize_loss(logits[batch_size:], y_batch[batch_size:])
+                loss_train = self.model.customize_loss(
+                    logits[:batch_size], y_batch[:batch_size])
+                loss_train += beta * \
+                    self.model.customize_loss(
+                        logits[batch_size:], y_batch[batch_size:])
 
                 # 反向传播和参数更新
                 loss_train.backward()
@@ -151,19 +159,23 @@ class MaxAdvTraining(object):
                 total_time += time.time() - start_time
 
                 # 计算训练的准确率
-                acc_train = (logits.argmax(1) == y_batch).sum().item() / x_batch.size()[0]
+                acc_train = (logits.argmax(1) == y_batch).sum(
+                ).item() / x_batch.size()[0]
                 accuracies.append(acc_train)
                 losses.append(loss_train.item())
 
                 # 如果需要，打印详细的训练信息
                 if verbose:
                     mins, secs = int(total_time / 60), int(total_time % 60)
-                    logger.info(f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
-                    logger.info(f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}%.')
+                    logger.info(
+                        f'Mini batch: {i * nbatches + idx_batch + 1}/{adv_epochs * nbatches} | training time in {mins:.0f} minutes, {secs} seconds.')
+                    logger.info(
+                        f'Training loss (batch level): {losses[-1]:.4f} | Train accuracy: {acc_train * 100:.2f}%.')
 
             # 打印每轮训练的平均损失和准确率
             if verbose:
-                logger.info(f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
+                logger.info(
+                    f'Training loss (epoch level): {np.mean(losses):.4f} | Train accuracy: {np.mean(accuracies) * 100:.2f}')
 
             # 选择模型
             self.model.eval()
@@ -181,33 +193,37 @@ class MaxAdvTraining(object):
             # 遍历验证数据
             for x_val, y_val in validation_data_producer:
                 # 将数据转换为适合模型的张量格式
-                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.model.device)
-                
+                x_val, y_val = utils.to_tensor(
+                    x_val.double(), y_val.long(), self.model.device)
+
                 # 让模型前向传播并得到结果
                 logits = self.model.forward(x_val)
-                
+
                 # 计算当前批次的准确率，并加入到平均准确率列表中
                 acc_val = (logits.argmax(1) == y_val).sum().item()
                 acc_val /= x_val.size()[0]
                 avg_acc_val.append(acc_val)
 
                 # 从验证集中获取恶意软件数据
-                mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_val, y_val)
-                
+                mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(
+                    x_val, y_val)
+
                 # 如果没有恶意软件数据，则跳过当前循环
                 if null_flag:
                     continue
 
                 # 对模型进行对抗性攻击
-                pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch, **self.attack_param)
+                pertb_mal_x = self.attack.perturb(
+                    self.model, mal_x_batch, mal_y_batch, **self.attack_param)
                 pertb_mal_x = utils.round_x(pertb_mal_x, 0.5)
 
                 # 对受到攻击的数据进行模型推断
-                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
-                
+                y_cent_batch, x_density_batch = self.model.inference_batch_wise(
+                    pertb_mal_x)
+
                 # 获取预测结果
                 y_pred = np.argmax(y_cent_batch, axis=-1)
-                
+
                 # 判断预测结果是否为恶意软件，并加入到验证结果列表中
                 res_val.append(y_pred == 1.)
 
@@ -227,7 +243,7 @@ class MaxAdvTraining(object):
                 best_acc_val = acc_val
                 acc_val_adv_be = acc_val_adv
                 best_epoch = i + 1
-                
+
                 # 保存当前最佳的模型
                 self.save_to_disk(best_epoch, optimizer, self.model_save_path)
 

@@ -24,7 +24,8 @@ def get_xmltree_by_ET(xml_path):
                 parser = ET.XMLParser(encoding="utf-8")
                 return ET.parse(fr, parser=parser)
         else:
-            raise FileNotFoundError("Error: No such file '{}'.".format(xml_path))
+            raise FileNotFoundError(
+                "Error: No such file '{}'.".format(xml_path))
     except IOError:
         raise IOError("Unable to load xml file from {}".format(xml_path))
 
@@ -41,7 +42,8 @@ def insert_perm_manifest(manifest_ET_tree, feature_type, spec_name, mod_count=1)
     if spec_name in all_spec_names:
         MSG = 'Repetition allowed:{}/\'{}\'.'.format(feature_type, spec_name)
         for t in range(mod_count):
-            ET.SubElement(root, feature_type).set(NAMESPACE + "name", spec_name)
+            ET.SubElement(root, feature_type).set(
+                NAMESPACE + "name", spec_name)
         return MSG, False, manifest_ET_tree
 
     for t in range(mod_count):
@@ -69,10 +71,12 @@ def insert_comp_manifest(manifest_ET_tree, comp_type, comp_spec_name, mod_count=
     if comp_spec_name in comp_names:
         MSG = 'Repetition allowed:{}/\'{}\'.'.format(comp_type, comp_spec_name)
         for t in range(mod_count):
-            ET.SubElement(application, comp_type).set(NAMESPACE + "name", comp_spec_name)
+            ET.SubElement(application, comp_type).set(
+                NAMESPACE + "name", comp_spec_name)
         return MSG, False, manifest_ET_tree
     for t in range(mod_count):
-        ET.SubElement(application, comp_type).set(NAMESPACE + "name", comp_spec_name)
+        ET.SubElement(application, comp_type).set(
+            NAMESPACE + "name", comp_spec_name)
     MSG = "Component inserted Successfully."
     return MSG, True, manifest_ET_tree
 
@@ -84,7 +88,8 @@ def insert_provider_manifest(manifest_ET_tree, provider_info, mod_count=1):
         application = ET.SubElement(root, "application")
         application.text = ' '
 
-    root_str = ET.tostring(root, encoding='utf-8', method='xml').decode('utf-8')
+    root_str = ET.tostring(root, encoding='utf-8',
+                           method='xml').decode('utf-8')
     root_split = root_str.split('</application>')
     for _ in range(mod_count):
         root_split[0] += '\n' + provider_info + '\n'
@@ -125,7 +130,8 @@ def insert_intent_manifest(manifest_ET_tree, comp_type, intent_spec_name, mod_co
     comp_tree.set(NAMESPACE + "name", comp_spec_name)
     for t in range(mod_count):
         intent_tree = ET.SubElement(comp_tree, 'intent-filter')
-        ET.SubElement(intent_tree, "action").set(NAMESPACE + "name", intent_spec_name)
+        ET.SubElement(intent_tree, "action").set(
+            NAMESPACE + "name", intent_spec_name)
     MSG = "intent-filter inserted Successfully."
     return MSG, True, manifest_ET_tree
 
@@ -138,7 +144,8 @@ def insert_elem_manifest(manifest_ET_tree, elem_type, elem_spec_name, mod_count=
 
     if elem_spec_name in elem_names:
         for t in range(mod_count):
-            ET.SubElement(root, elem_type).set(NAMESPACE + "name", elem_spec_name)
+            ET.SubElement(root, elem_type).set(
+                NAMESPACE + "name", elem_spec_name)
 
     for t in range(mod_count):
         ET.SubElement(root, elem_type).set(NAMESPACE + "name", elem_spec_name)
@@ -153,11 +160,14 @@ def get_package_name(manifest_path):
 def dump_xml(save_path, et_tree):
     try:
         if os.path.isfile(save_path):
-            ET.register_namespace('android', "http://schemas.android.com/apk/res/android")
+            ET.register_namespace(
+                'android', "http://schemas.android.com/apk/res/android")
             with open(save_path, "wb") as fw:
-                et_tree.write(fw, encoding="UTF-8", xml_declaration=True, method='xml')
+                et_tree.write(fw, encoding="UTF-8",
+                              xml_declaration=True, method='xml')
     except Exception as ex:
-        raise IOError("Unable to dump xml file {}:{}.".format(save_path, str(ex)))
+        raise IOError(
+            "Unable to dump xml file {}:{}.".format(save_path, str(ex)))
 
 
 def fix_invalid_id(comp_name, spec_chr='@&'):
@@ -170,7 +180,7 @@ def fix_invalid_id(comp_name, spec_chr='@&'):
     return comp_name
 
 
-def defix_invalid_id(comp_name,spec_chr='@&'):
+def defix_invalid_id(comp_name, spec_chr='@&'):
     return comp_name.replace(spec_chr, '$')
 
 
@@ -180,7 +190,8 @@ def check_comp_name(manifest_ET_tree, comp_type, comp_spec_name):
     if application is None:
         return False
 
-    comp_elems = application.findall(comp_type)  # Neglect the element under other components
+    # Neglect the element under other components
+    comp_elems = application.findall(comp_type)
 
     if len(comp_elems) == 0:
         return False
@@ -190,6 +201,7 @@ def check_comp_name(manifest_ET_tree, comp_type, comp_spec_name):
         return False
     else:
         return True
+
 
 def rename_comp_manifest(manifest_ET_tree, comp_type, comp_spec_name):
     """
@@ -205,7 +217,8 @@ def rename_comp_manifest(manifest_ET_tree, comp_type, comp_spec_name):
         info = "No such component '{}'\n".format(comp_type)
         return info, False, None, manifest_ET_tree
 
-    comp_elems = application.findall(comp_type)  # Neglect the element under other components
+    # Neglect the element under other components
+    comp_elems = application.findall(comp_type)
 
     if len(comp_elems) == 0:
         info = "No such component name '{}'\n".format(comp_spec_name)
@@ -229,14 +242,16 @@ def rename_comp_manifest(manifest_ET_tree, comp_type, comp_spec_name):
     if len(inner_names) >= 2:
         pre_name2 = inner_names[0]
         if spec_chr in inner_names[1]:
-            _last_names = [crypt_identifier(n) for n in inner_names[1].split(spec_chr)]
+            _last_names = [crypt_identifier(n)
+                           for n in inner_names[1].split(spec_chr)]
             new_last_name = '$' + spec_chr.join(_last_names)
         else:
             new_last_name = '$' + crypt_identifier(inner_names[1])
     else:
         pre_name2 = ''
         if '@&' in inner_names[0]:
-            _last_names = [crypt_identifier(n) for n in inner_names[0].split(spec_chr)]
+            _last_names = [crypt_identifier(n)
+                           for n in inner_names[0].split(spec_chr)]
             new_last_name = spec_chr.join(_last_names)
         else:
             new_last_name = crypt_identifier(inner_names[0])
@@ -295,12 +310,18 @@ def change_match_xml_line(xml_line, class_strings, src_name, dst_name):
                 xml_line = xml_line.replace(src_name + '>', dst_name + '>')
                 xml_line = xml_line.replace(src_name + ' ', dst_name + ' ')
             else:
-                xml_line = xml_line.replace('"' + src_name + '"', '"' + dst_name + '"')
-                xml_line = xml_line.replace('/' + src_name + '"', '/' + dst_name + '"')
-                xml_line = xml_line.replace('/' + src_name + '/', '/' + dst_name + '/')
-                xml_line = xml_line.replace('/' + src_name + ' ', '/' + dst_name + ' ')
-                xml_line = xml_line.replace('<' + src_name + ' ', '<' + dst_name + ' ')
-                xml_line = xml_line.replace('<' + src_name + '>', '<' + dst_name + '>')
+                xml_line = xml_line.replace(
+                    '"' + src_name + '"', '"' + dst_name + '"')
+                xml_line = xml_line.replace(
+                    '/' + src_name + '"', '/' + dst_name + '"')
+                xml_line = xml_line.replace(
+                    '/' + src_name + '/', '/' + dst_name + '/')
+                xml_line = xml_line.replace(
+                    '/' + src_name + ' ', '/' + dst_name + ' ')
+                xml_line = xml_line.replace(
+                    '<' + src_name + ' ', '<' + dst_name + ' ')
+                xml_line = xml_line.replace(
+                    '<' + src_name + '>', '<' + dst_name + '>')
             # print src_name, dst_name
 
             break
@@ -321,5 +342,6 @@ def change_xml(xml_paths, related_class_names, source_name, dst_name, pkg_name):
     for xml_path in xml_paths:
         for xml_line in read_file_by_fileinput(xml_path):
             if pkg_name in xml_line or source_name in xml_line:
-                xml_line = change_match_xml_line(xml_line, related_class_ext, source_name, dst_name)
+                xml_line = change_match_xml_line(
+                    xml_line, related_class_ext, source_name, dst_name)
             print(xml_line.strip())

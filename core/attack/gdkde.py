@@ -32,7 +32,8 @@ class GDKDE(BaseAttack):
 
     def __init__(self, benign_feat=None, bandwidth=20., penalty_factor=1000.,
                  is_attacker=True, oblivion=False, kappa=1., manipulation_x=None, omega=None, device=None):
-        super(GDKDE, self).__init__(is_attacker, oblivion, kappa, manipulation_x, omega, device)
+        super(GDKDE, self).__init__(is_attacker, oblivion,
+                                    kappa, manipulation_x, omega, device)
         self.benign_feat = benign_feat
         self.bandwidth = bandwidth
         self.penalty_factor = penalty_factor
@@ -64,7 +65,8 @@ class GDKDE(BaseAttack):
             return []
         adv_x = x
         self.lambda_ = lambda_
-        self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1  # we set a graph contains two apis at least
+        # we set a graph contains two apis at least
+        self.padding_mask = torch.sum(adv_x, dim=-1, keepdim=True) > 1
         model.eval()
         for t in range(steps):
             var_adv_x = torch.autograd.Variable(adv_x, requires_grad=True)
@@ -72,7 +74,8 @@ class GDKDE(BaseAttack):
             grad = torch.autograd.grad(torch.mean(loss), var_adv_x)[0]
             perturbation = self.get_perturbation(grad, x, adv_x)
             # avoid to perturb the examples that are successful to evade the victim
-            adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
+            adv_x = torch.clamp(adv_x + perturbation *
+                                step_length, min=0., max=1.)
         return round_x(adv_x)
 
     def perturb(self, model, x, label=None,
@@ -97,7 +100,8 @@ class GDKDE(BaseAttack):
             _, done = self.get_loss(model, adv_x, label)
             if torch.all(done):
                 break
-            adv_x[~done] = x[~done]  # recompute the perturbation under other penalty factors
+            # recompute the perturbation under other penalty factors
+            adv_x[~done] = x[~done]
             pert_x = self._perturb(model, adv_x[~done], label[~done],
                                    steps,
                                    step_length,
@@ -108,7 +112,8 @@ class GDKDE(BaseAttack):
         with torch.no_grad():
             _, done = self.get_loss(model, adv_x, label)
             if verbose:
-                logger.info(f"gdkde: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
+                logger.info(
+                    f"gdkde: attack effectiveness {done.sum().item() / x.size()[0] * 100:.3}%.")
         return adv_x
 
     def get_perturbation(self, gradients, features, adv_features):
@@ -118,11 +123,13 @@ class GDKDE(BaseAttack):
         grad4insertion = (gradients > 0) * pos_insertion * gradients
         # api removal
         pos_removal = (adv_features > 0.5) * 1
-        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        grad4removal = (gradients < 0) * (pos_removal &
+                                          self.manipulation_x) * gradients
         if self.is_attacker:
             # cope with the interdependent apis
             checking_nonexist_api = (pos_removal ^ self.omega) & self.omega
-            grad4removal[:, self.api_flag] += torch.sum(gradients * checking_nonexist_api, dim=-1, keepdim=True)
+            grad4removal[:, self.api_flag] += torch.sum(
+                gradients * checking_nonexist_api, dim=-1, keepdim=True)
         gradients = grad4removal + grad4insertion
 
         # normalize gradient in the direction of l2 norm
@@ -136,7 +143,8 @@ class GDKDE(BaseAttack):
 
         # add the extra perturbation owing to the interdependent apis
         if self.is_attacker:
-            min_val = torch.amin(perturbation, dim=-1, keepdim=True).clamp_(max=0.)
+            min_val = torch.amin(perturbation, dim=-1,
+                                 keepdim=True).clamp_(max=0.)
             perturbation += (torch.any(perturbation[:, self.api_flag] < 0, dim=-1,
                                        keepdim=True) * torch.abs(min_val) * checking_nonexist_api)
         return perturbation
@@ -150,13 +158,15 @@ class GDKDE(BaseAttack):
         y_pred = logits_f.argmax(1)
         kernel_v = torch.sum(torch.abs(self.benign_feat.float().unsqueeze(dim=0) - adv_x.float().unsqueeze(dim=1)),
                              dim=-1)
-        kde = self.penalty_factor * torch.mean(torch.exp(-kernel_v / self.bandwidth), dim=-1)
+        kde = self.penalty_factor * \
+            torch.mean(torch.exp(-kernel_v / self.bandwidth), dim=-1)
         loss_no_reduction = ce - kde
 
         if hasattr(model, 'is_detector_enabled') and (not self.oblivion):
             tau = model.get_tau_sample_wise(y_pred)
             if self.is_attacker:
-                loss_no_reduction += self.lambda_ * (torch.clamp(tau - prob_g, max=self.kappa))
+                loss_no_reduction += self.lambda_ * \
+                    (torch.clamp(tau - prob_g, max=self.kappa))
             else:
                 loss_no_reduction += self.lambda_ * (tau - prob_g)
             done = (y_pred != label) & (prob_g <= tau)

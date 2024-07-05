@@ -32,34 +32,39 @@ logger = logging.getLogger('core.defense.svm')
 # 向日志记录器添加一个错误处理器，确保错误信息被适当捕获和处理
 logger.addHandler(ErrorHandler)
 
+
 class MalwareDetectionSVM(nn.Module):
     """
     Using fully connected neural network to implement linear SVM and Logistic regression with hinge loss and
     cross-entropy loss which computes softmax internally, respectively.
     """
+
     def __init__(self, input_size, n_classes=2, device='cpu', name='md_svm', **kwargs):
-        super(MalwareDetectionSVM, self).__init__()    # Call the init function of nn.Module
+        # Call the init function of nn.Module
+        super(MalwareDetectionSVM, self).__init__()
         self.input_size = input_size  # 定义输入尺寸
         self.n_classes = n_classes    # 定义分类数量
         self.device = device          # 定义运行设备
         self.name = name              # 定义模型名称
-        
+
         self.fc = nn.Linear(self.input_size, self.n_classes)
-        
+
         self.parse_args(**kwargs)   # 解析额外参数
-        
+
         # 定义模型的保存路径
         self.model_save_path = path.join(config.get('experiments', 'md_svm') + '_' + self.name,
                                          'model.pth')
-        
+
         # 日志中打印模型的结构信息
-        logger.info('========================================svm model architecture===============================')
+        logger.info(
+            '========================================svm model architecture===============================')
         logger.info(self)
-        logger.info('===============================================end==========================================')
-        
+        logger.info(
+            '===============================================end==========================================')
+
     def parse_args(self,
-                **kwargs
-                ):
+                   **kwargs
+                   ):
         """
         解析并设置网络的超参数。
         """
@@ -70,22 +75,20 @@ class MalwareDetectionSVM(nn.Module):
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
-
     def forward(self, x):
         out = self.fc(x)
-        
+
         # 使用sigmoid来获取正类的概率
         return torch.sigmoid(out).squeeze()
-
 
     def inference(self, test_data_producer):
         """
         进行模型推理，获得预测的置信度和真实标签
-        
+
         参数
         ----------
         @param test_data_producer: 数据生产者或数据加载器，用于产生测试数据
-        
+
         返回值
         ----------
         返回预测的置信度和真实标签
@@ -111,18 +114,17 @@ class MalwareDetectionSVM(nn.Module):
         confidences = torch.vstack(confidences)
         # 将所有批次的真实标签连接成一个张量
         gt_labels = torch.cat(gt_labels, dim=0)
-        
-        return confidences, gt_labels
 
+        return confidences, gt_labels
 
     def inference_dae(self, test_data_producer):
         """
         进行模型推理，获得预测的置信度和真实标签
-        
+
         参数
         ----------
         @param test_data_producer: 数据生产者或数据加载器，用于产生测试数据
-        
+
         返回值
         ----------
         返回预测的置信度和真实标签
@@ -143,38 +145,37 @@ class MalwareDetectionSVM(nn.Module):
                 confidences.append(F.softmax(logits, dim=-1))
                 # 将每一批数据的真实标签添加到gt_labels列表中
                 gt_labels.append(y)
-        
-        return confidences, gt_labels
 
+        return confidences, gt_labels
 
     def inference_batch_wise(self, x):
         """
         仅支持恶意软件样本的批量推理
-        
+
         参数
         ----------
         @param x: 输入数据的张量
-        
+
         返回值
         ----------
         返回推理的置信度和标签
         """
         # 确保输入是一个张量
         assert isinstance(x, torch.Tensor)
-        
+
         # 获得模型的输出
         logit = self.forward(x)
-        
+
         # 返回每个样本的置信度和一个与logit形状相同的全1数组（表示恶意软件样本）
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
-
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., weight_sampling=0.5, verbose=True):
         """
         训练SVM模型，并根据验证集上的损失选择最佳模型。
         """
         # 初始化优化器和损失函数
-        optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.parameters(), lr=lr,
+                               weight_decay=weight_decay)
         criterion = nn.MultiMarginLoss()
 
         best_avg_acc = 0.   # 记录验证集上的最佳准确率
@@ -182,7 +183,7 @@ class MalwareDetectionSVM(nn.Module):
 
         # 获取训练数据批次的数量
         nbatches = len(train_data_producer)
-        
+
         for i in range(epochs):
             self.train()
             running_corrects = 0
@@ -190,23 +191,24 @@ class MalwareDetectionSVM(nn.Module):
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
                 x_train = x_train.double().to(self.device)
                 y_train = y_train.long().to(self.device)
-                
-                optimizer.zero_grad()        
-                                    
-                outputs = self.forward(x_train)  
+
+                optimizer.zero_grad()
+
+                outputs = self.forward(x_train)
                 loss = criterion(outputs, y_train)
-                
+
                 loss.backward()
                 optimizer.step()
-                
+
                 _, preds = torch.max(outputs, 1)
                 running_corrects += torch.sum(preds == y_train).item()
 
-                if verbose and (idx_batch % 10 == 0): # 打印每10批次的训练情况
-                    print(f"Epoch {i}/{epochs}, Batch {idx_batch}/{nbatches} - Loss: {loss.item():.4f}")
+                if verbose and (idx_batch % 10 == 0):  # 打印每10批次的训练情况
+                    print(
+                        f"Epoch {i}/{epochs}, Batch {idx_batch}/{nbatches} - Loss: {loss.item():.4f}")
 
             epoch_acc = running_corrects / len(train_data_producer.dataset)
-            
+
             self.eval()  # 将模型设置为评估模式
             val_corrects = 0
             with torch.no_grad():
@@ -223,22 +225,24 @@ class MalwareDetectionSVM(nn.Module):
             if val_acc > best_avg_acc:
                 best_avg_acc = val_acc
                 best_epoch = i
-                
+
                 # 检查模型保存路径是否存在，如果不存在，则创建
                 if not path.exists(self.model_save_path):
                     utils.mkdir(path.dirname(self.model_save_path))
-                
+
                 # 保存当前的模型参数
                 torch.save(self.state_dict(), self.model_save_path)
-                
+
                 # 如果开启了详细输出模式，显示模型保存路径
                 if verbose:
                     print(f'模型保存在路径： {self.model_save_path}')
 
             if verbose:
-                print(f"Epoch {i}/{epochs} - Training Accuracy: {epoch_acc:.4f}, Validation Accuracy: {val_acc:.4f}")
+                print(
+                    f"Epoch {i}/{epochs} - Training Accuracy: {epoch_acc:.4f}, Validation Accuracy: {val_acc:.4f}")
 
-        print(f"Best Validation Accuracy: {best_avg_acc:.4f} at Epoch {best_epoch}")
+        print(
+            f"Best Validation Accuracy: {best_avg_acc:.4f} at Epoch {best_epoch}")
 
     def predict(self, test_data_producer, indicator_masking=True):
         """
@@ -252,15 +256,15 @@ class MalwareDetectionSVM(nn.Module):
         confidence, y_true = self.inference(test_data_producer)
         y_pred = confidence.argmax(1).cpu().numpy()  # 预测标签
         y_true = y_true.cpu().numpy()                # 真实标签
-        
+
         # 使用sklearn的评估指标进行评估
         from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
         accuracy = accuracy_score(y_true, y_pred)
         b_accuracy = balanced_accuracy_score(y_true, y_pred)
-        
+
         MSG = "The accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(accuracy * 100))
-        
+
         MSG = "The balanced accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(b_accuracy * 100))
 
@@ -277,7 +281,7 @@ class MalwareDetectionSVM(nn.Module):
 
         print("Other evaluation metrics we may need:")
         MSG = "False Negative Rate (FNR) is {:.5f}%、False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
-        logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))    
+        logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
 
     def load(self):
         """

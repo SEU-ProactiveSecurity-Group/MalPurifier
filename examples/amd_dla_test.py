@@ -33,17 +33,18 @@ dla_argparse.add_argument('--round_threshold', type=float, default=0.5,
 def _main():
     # 解析命令行参数
     args = cmd_md.parse_args()
-    
+
     # 根据提供的参数初始化数据集
     dataset = Dataset(feature_ext_args=get_group_args(args, cmd_md, 'feature'))
-    
+
     # 为训练、验证和测试数据集建立输入生产器
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size,
                                                         name='train', use_cache=args.cache)
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size,
                                                       name='val')
-    test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
-    
+    test_dataset_producer = dataset.get_input_producer(
+        *dataset.test_dataset, batch_size=args.batch_size, name='test')
+
     # 断言确保数据集只有两个类别
     assert dataset.n_classes == 2
 
@@ -54,8 +55,9 @@ def _main():
         dv = 'cuda'
 
     # 为模型设置名称，如果是测试模式则使用给定的名称，否则使用当前时间为其命名
-    model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
-    
+    model_name = args.model_name if args.mode == 'test' else time.strftime(
+        "%Y%m%d-%H%M%S")
+
     # 初始化深度学习对抗模型
     dla_model = AMalwareDetectionDLA(md_nn_model=None,
                                      input_size=dataset.vocab_size,
@@ -66,7 +68,7 @@ def _main():
                                      )
     # 将模型移到相应的设备上并将其转化为双精度格式
     dla_model = dla_model.to(dv).double()
-    
+
     # 初始化一个基于L-infinity范数的PGD对抗攻击器
     pgdlinf = PGD(norm='linf', use_random=False,
                   is_attacker=False,
@@ -76,15 +78,16 @@ def _main():
                               step_length=args.step_length_linf,
                               verbose=False
                               )
-    
+
     # 初始化一个基于L2范数的PGD对抗攻击器
-    pgdl2 = PGD(norm='l2', use_random=False, is_attacker=False, device=dla_model.device)
+    pgdl2 = PGD(norm='l2', use_random=False,
+                is_attacker=False, device=dla_model.device)
     pgdl2.perturb = partial(pgdl2.perturb,
                             steps=args.steps_l2,
                             step_length=args.step_length_l2,
                             verbose=False
                             )
-    
+
     # 初始化一个基于L1范数的PGD对抗攻击器
     pgdl1 = PGDl1(is_attacker=False, device=dla_model.device)
     pgdl1.perturb = partial(pgdl1.perturb,
@@ -95,10 +98,10 @@ def _main():
     if args.ma == 'max':
         # Max攻击结合了三种PGD攻击方法
         attack = Max(attack_list=[pgdlinf, pgdl2, pgdl1],
-                    varepsilon=1e-9,
-                    is_attacker=False,
-                    device=dla_model.device
-                    )
+                     varepsilon=1e-9,
+                     is_attacker=False,
+                     device=dla_model.device
+                     )
         # 为Max攻击设置参数
         attack_param = {
             'steps_max': 1,  # Max攻击的步骤数
@@ -110,7 +113,8 @@ def _main():
         attack = StepwiseMax(is_attacker=False, device=dla_model.device)
         # 设置StepwiseMax攻击的参数
         attack_param = {
-            'steps': max(max(args.steps_l1, args.steps_linf), args.steps_l2), #选择三种范数中的最大步数
+            # 选择三种范数中的最大步数
+            'steps': max(max(args.steps_l1, args.steps_linf), args.steps_l2),
             'sl_l1': 1.,
             'sl_l2': args.step_length_l2,
             'sl_linf': args.step_length_linf,
@@ -123,17 +127,19 @@ def _main():
     # 如果是训练模式
     if args.mode == 'train':
         dla_model.fit(train_dataset_producer,
-                    val_dataset_producer,
-                    attack,
-                    attack_param,
-                    epochs=args.epochs,
-                    lr=args.lr,
-                    weight_decay=args.weight_decay
-                    )
+                      val_dataset_producer,
+                      attack,
+                      attack_param,
+                      epochs=args.epochs,
+                      lr=args.lr,
+                      weight_decay=args.weight_decay
+                      )
         # 保存参数为人类可读格式
-        save_args(path.join(path.dirname(dla_model.model_save_path), "hparam"), vars(args))
+        save_args(path.join(path.dirname(
+            dla_model.model_save_path), "hparam"), vars(args))
         # 为了重建神经网络保存参数
-        dump_pickle(vars(args), path.join(path.dirname(dla_model.model_save_path), "hparam.pkl"))
+        dump_pickle(vars(args), path.join(path.dirname(
+            dla_model.model_save_path), "hparam.pkl"))
 
     # 加载模型
     dla_model.load()
@@ -141,6 +147,7 @@ def _main():
     dla_model.get_threshold(val_dataset_producer, ratio=args.ratio)
     # 对测试数据进行预测
     dla_model.predict(test_dataset_producer, indicator_masking=True)
+
 
 if __name__ == '__main__':
     _main()

@@ -37,7 +37,8 @@ class APKTestADB(object):
     def _check_device_state(self):
         # get device/emulator state
         try:
-            proc_res = subprocess.check_output(['adb', 'get-state']).decode('utf-8')
+            proc_res = subprocess.check_output(
+                ['adb', 'get-state']).decode('utf-8')
             if proc_res.strip() == "device":  # support a device
                 logger.info("Ready for testing...")
                 self.state = True
@@ -60,11 +61,13 @@ class APKTestADB(object):
             if full_pkg_name.startswith('package'):
                 full_pkg_name = full_pkg_name.lstrip('package ')
                 pkg_name = \
-                    [info.lstrip('name=').strip("'") for info in full_pkg_name.split(' ') if info.startswith('name')][0]
+                    [info.lstrip('name=').strip("'") for info in full_pkg_name.split(
+                        ' ') if info.startswith('name')][0]
                 return pkg_name
             elif 'package: name' in full_pkg_name:
                 pkg_name = \
-                    [info.lstrip('name=').strip("'") for info in full_pkg_name.split(' ') if info.startswith('name')][0]
+                    [info.lstrip('name=').strip("'") for info in full_pkg_name.split(
+                        ' ') if info.startswith('name')][0]
                 return pkg_name
             else:
                 logger.error("No package name found: " + apk_path)
@@ -95,7 +98,8 @@ class APKTestADB(object):
         if not os.path.exists(i_log_dir):
             utils.mkdir(i_log_dir)
         if self._check_apk_on_device(pkg_name):
-            warnings.warn("An apk with same package name has existed on the device. Uninstallation performed.")
+            warnings.warn(
+                "An apk with same package name has existed on the device. Uninstallation performed.")
             self.remove_apk(apk_path)
 
         os.system('adb logcat -c -b main -b events -b radio')
@@ -103,17 +107,20 @@ class APKTestADB(object):
             proc_res = subprocess.check_output(['adb', 'install', apk_path],
                                                stderr=subprocess.STDOUT).decode('utf-8')  # return "Success\n"
             if proc_res.strip().lower() == 'success':
-                logger.info("Succeed to install the app: {}".format(os.path.basename(apk_path)))
+                logger.info("Succeed to install the app: {}".format(
+                    os.path.basename(apk_path)))
                 return True
             else:
                 log_fpath = os.path.join(i_log_dir, sha256 + ".install")
                 os.system('adb' + ' logcat -d >>' + log_fpath)
-                logger.info("Fail to install the app: {}".format(os.path.basename(apk_path)))
+                logger.info("Fail to install the app: {}".format(
+                    os.path.basename(apk_path)))
                 return False
         except subprocess.CalledProcessError as e:
             log_fpath = os.path.join(i_log_dir, sha256 + ".install")
             os.system('adb' + ' logcat -d >>' + log_fpath)
-            logger.error("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
+            logger.error("Command '{}' return with error (code {}):{}".format(
+                e.cmd, e.returncode, e.output))
             return False
 
     def remove_apk(self, apk_path):
@@ -128,24 +135,29 @@ class APKTestADB(object):
         try:
             pkg_name = self._get_pkg_name(apk_path)
             # stop the running apk
-            subprocess.check_output(['adb', 'shell', 'am', 'force-stop', pkg_name]).decode('utf-8')
+            subprocess.check_output(
+                ['adb', 'shell', 'am', 'force-stop', pkg_name]).decode('utf-8')
             # uninstall the apk
-            proc_res = subprocess.check_output(['adb', 'uninstall', pkg_name], stderr=subprocess.STDOUT).decode('utf-8')
+            proc_res = subprocess.check_output(
+                ['adb', 'uninstall', pkg_name], stderr=subprocess.STDOUT).decode('utf-8')
 
             if proc_res.strip().lower() == 'success':
-                logger.info("Succeed to uninstall the app: {}".format(os.path.basename(apk_path)))
+                logger.info("Succeed to uninstall the app: {}".format(
+                    os.path.basename(apk_path)))
                 return True
             else:
                 log_fpath = os.path.join(r_log_dir, sha256 + ".uninstall")
                 os.system('adb' + ' logcat -d >>' + log_fpath)
                 os.system('adb' + ' logcat -c')
-                logger.info("Fail to uninstall the app: {}".format(os.path.basename(apk_path)))
+                logger.info("Fail to uninstall the app: {}".format(
+                    os.path.basename(apk_path)))
                 return False
         except subprocess.CalledProcessError as e:
             log_fpath = os.path.join(r_log_dir, sha256 + ".uninstall")
             os.system('adb' + ' logcat -d >>' + log_fpath)
             os.system('adb' + ' logcat -c')
-            logger.error("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
+            logger.error("Command '{}' return with error (code {}):{}".format(
+                e.cmd, e.returncode, e.output))
             return False
 
     def run_monkey(self, apk_path, count=1000, seed=123456543):
@@ -167,12 +179,14 @@ class APKTestADB(object):
             try:
                 proc_out = subprocess.check_output(
                     ['adb', 'shell', 'monkey', '-p', pkg_name, '--ignore-crashes', '--ignore-timeouts',
-                     '--ignore-security-exceptions', '--pct-appswitch', '80', '-s', str(seed), '-v', '-v',
+                     '--ignore-security-exceptions', '--pct-appswitch', '80', '-s', str(
+                         seed), '-v', '-v',
                      '-v', str(count)]).decode('utf-8')
             except subprocess.CalledProcessError as e:
                 raise RuntimeError(
                     "Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
-            logger.info('Handling the apk {}.'.format(os.path.basename(apk_path)))
+            logger.info('Handling the apk {}.'.format(
+                os.path.basename(apk_path)))
             logger.info('Done: {}'.format(os.path.basename(apk_path)))
             proc_adb_log = subprocess.run('adb logcat -d',
                                           shell=True,
@@ -183,7 +197,8 @@ class APKTestADB(object):
         except subprocess.CalledProcessError as e:
             log_fpath = os.path.join(m_log_dir, sha256 + ".monkey")
             os.system('adb' + ' logcat -d >>' + log_fpath)
-            raise RuntimeError("Command '{}' return with error (code {}):{}".format(e.cmd, e.returncode, e.output))
+            raise RuntimeError("Command '{}' return with error (code {}):{}".format(
+                e.cmd, e.returncode, e.output))
 
         proc_res_activites = []
         proc_res_exps = []
@@ -203,10 +218,12 @@ class APKTestADB(object):
         exceptions = []
 
         for line in proc_res_activites:
-            activities.append(line.split('I ActivityManager: Displayed')[1].strip().split(":")[0])
+            activities.append(line.split('I ActivityManager: Displayed')[
+                              1].strip().split(":")[0])
 
         for line in proc_res_exps:
-            exceptions.append(line.split('AndroidRuntime: ')[1].strip().split(':')[0])
+            exceptions.append(line.split('AndroidRuntime: ')
+                              [1].strip().split(':')[0])
         return activities, exceptions
 
     def submit(self, apk_path):
@@ -255,7 +272,8 @@ class APKTestADB(object):
                     else:
                         info['install'] = 'failure'
                         utils.dump_json(info, save_path)
-                        logger.error("Cannot install application {}.".format(os.path.basename(apk_path)))
+                        logger.error("Cannot install application {}.".format(
+                            os.path.basename(apk_path)))
                         # sys.exit(1)
             except Exception as e:
                 logger.error(str(e))
@@ -294,11 +312,8 @@ class APKTestADB(object):
 
 
 def _main():
+    # test
     apk_test_adb = APKTestADB()
-    # apk_test_adb.install_apk("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
-    # apk_test_adb.run_monkey("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
-    # apk_test_adb.remove_apk("/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")
-    # apk_test_adb.submit('/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk')
     apk_test_adb.run()
     apk_test_adb.get_state(
         "/local_disk/data/Android//drebin/malicious_samples/2dd94e49e75467cb055099319fc90d0f93d0868e531593f857cf91f6f3220c87.apk")

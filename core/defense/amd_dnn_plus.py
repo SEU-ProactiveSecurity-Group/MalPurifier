@@ -40,13 +40,14 @@ from tools import utils
 logger = logging.getLogger('core.defense.amd_dnn_plus')
 logger.addHandler(ErrorHandler)
 
+
 class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
     def __init__(self, md_nn_model, input_size, n_classes, ratio=0.95,
                  device='cpu', name='', **kwargs):
         # 调用父类构造函数
         nn.Module.__init__(self)
         DetectorTemplate.__init__(self)
-        
+
         # 初始化输入参数
         self.input_size = input_size
         self.n_classes = n_classes
@@ -77,7 +78,8 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
                                                **kwargs)
 
         # 初始化一个不需要梯度的阈值参数
-        self.tau = nn.Parameter(torch.zeros([1, ], device=self.device), requires_grad=False)
+        self.tau = nn.Parameter(torch.zeros(
+            [1, ], device=self.device), requires_grad=False)
 
         # 模型保存路径
         self.model_save_path = path.join(config.get('experiments', 'amd_dnn_plus') + '_' + self.name,
@@ -85,10 +87,11 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         self.md_nn_model.model_save_path = self.model_save_path
 
         # 输出模型结构信息
-        logger.info('========================================NN_PLUS model architecture==============================')
+        logger.info(
+            '========================================NN_PLUS model architecture==============================')
         logger.info(self)
-        logger.info('===============================================end==============================================')
-
+        logger.info(
+            '===============================================end==============================================')
 
     def parse_args(self,
                    dense_hidden_units=None,
@@ -118,10 +121,10 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         # 设置其他超参数
         self.dropout = dropout
         self.alpha_ = alpha_
-        
+
         # 提取proc_number参数
         self.proc_number = kwargs['proc_number']
-        
+
         # 如果还有其他未知参数，给出警告
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
@@ -142,10 +145,11 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
 
         # 通过模型获取logits
         logits = self.amd_nn_plus(x)
-        
+
         # 从logits中减去其最大值，增加数值稳定性
-        logits -= torch.amax(logits, dim=-1, keepdim=True).detach()  # 增加稳定性，可能有助于提高模型性能
-        
+        # 增加稳定性，可能有助于提高模型性能
+        logits -= torch.amax(logits, dim=-1, keepdim=True).detach()
+
         # 返回logits和概率
         if logits.dim() == 1:
             return logits, torch.softmax(logits, dim=-1)[-1]
@@ -175,12 +179,14 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         def measurement(_y_true, _y_pred):
             # 导入所需的评估指标库
             from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
-            
+
             # 计算并打印准确率和平衡准确率
             accuracy = accuracy_score(_y_true, _y_pred)
             b_accuracy = balanced_accuracy_score(_y_true, _y_pred)
-            logger.info(f"The accuracy on the test dataset is {accuracy * 100:.5f}%")
-            logger.info(f"The balanced accuracy on the test dataset is {b_accuracy * 100:.5f}%")
+            logger.info(
+                f"The accuracy on the test dataset is {accuracy * 100:.5f}%")
+            logger.info(
+                f"The balanced accuracy on the test dataset is {b_accuracy * 100:.5f}%")
 
             # 检查是否所有类都存在于真实标签中
             if np.any([np.all(_y_true == i) for i in range(self.n_classes)]):
@@ -192,7 +198,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
             fpr = fp / float(tn + fp)
             fnr = fn / float(tp + fn)
             f1 = f1_score(_y_true, _y_pred, average='binary')
-            
+
             # 打印其他可能需要的评估指标
             logger.info(f"False Negative Rate (FNR) is {fnr * 100:.5f}%, \
                         False Positive Rate (FPR) is {fpr * 100:.5f}%, F1 score is {f1 * 100:.5f}%")
@@ -219,7 +225,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
     def inference(self, test_data_producer):
         """
         对测试数据进行推断。
-        
+
         @param test_data_producer: 一个torch.DataLoader，用于生产测试数据批次。
         @return: 返回预测的类别概率、某种概率度量（可能是样本的确定性或其他度量）以及真实标签。
         """
@@ -228,9 +234,11 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
         self.eval()  # 设置模型为评估模式
         with torch.no_grad():  # 不计算梯度，因为我们只是在做推断
             for x, y in test_data_producer:
-                x, y = utils.to_device(x.double(), y.long(), self.device)  # 将数据移动到指定设备上
+                x, y = utils.to_device(
+                    x.double(), y.long(), self.device)  # 将数据移动到指定设备上
                 logits, x_cent = self.forward(x)  # 获得模型输出
-                y_cent.append(F.softmax(logits, dim=-1)[:, :2])  # 获得前两类的softmax输出
+                y_cent.append(F.softmax(logits, dim=-1)
+                              [:, :2])  # 获得前两类的softmax输出
                 x_prob.append(x_cent)  # 存储某种概率度量或确定性度量
                 gt_labels.append(y)  # 存储真实标签
 
@@ -243,7 +251,7 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
     def inference_batch_wise(self, x):
         """
         批量-wise推断方法。给定输入x，返回对应的推断结果。
-        
+
         @param x: 输入数据的Tensor
         @return: 返回预测的类别概率和某种概率度量。
         """
@@ -262,19 +270,19 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
     def get_tau_sample_wise(self, y_pred=None):
         """
         返回tau的值，tau可能是一个决策阈值或其他参数。
-        
+
         @param y_pred: 可选的，预测的标签。在这里它似乎没有被使用。
         @return: 返回tau的值。
         """
         return self.tau
 
-
     # indicator 函数是基于概率值 x_prob 和阈值 tau 来判断给定的样本是否被认为是原始的。
     # 这可能在检测对抗性样本时很有用，因为对抗性样本可能有与原始样本不同的概率特征。
+
     def indicator(self, x_prob, y_pred=None):
         """
         根据样本的概率值x_prob和阈值tau，判断样本是否为原始样本。
-        
+
         :@param x_prob: 样本的概率值。
         :@param y_pred: 可选的，预测的标签，但在此函数中未使用。
         :@return: 如果样本是原始样本，返回True，否则返回False。
@@ -294,42 +302,42 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
     def get_threshold(self, validation_data_producer, ratio=None):
         """
         获取对抗性检测的阈值。
-        
+
         :@param validation_data_producer: 对象，用于生成验证数据集的迭代器。
         :@param ratio: 比率，用于确定要设置为阈值的概率分位数。
         """
         # 设置模型为评估模式
-        self.eval()  
-        
+        self.eval()
+
         # 如果没有指定比率，则使用类的默认比率
-        ratio = ratio if ratio is not None else self.ratio  
-        
-         # 确保比率在[0, 1]范围内
+        ratio = ratio if ratio is not None else self.ratio
+
+        # 确保比率在[0, 1]范围内
         assert 0 <= ratio <= 1
-        
-        # 用于存储所有验证样本的概率值的列表 
-        probabilities = [] 
+
+        # 用于存储所有验证样本的概率值的列表
+        probabilities = []
         with torch.no_grad():
             for x_val, y_val in validation_data_producer:
                 # 转化为torch tensor并移至指定设备
-                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.device) 
-                
+                x_val, y_val = utils.to_tensor(
+                    x_val.double(), y_val.long(), self.device)
+
                 # 获取模型的输出，_1表示我们不关心这个输出，只关心x_cent
                 _1, x_cent = self.forward(x_val)
-                
-                # 添加到概率列表 
-                probabilities.append(x_cent)  
-                
-            # 将所有概率连接并排序
-            s, _ = torch.sort(torch.cat(probabilities, dim=0)) 
-            
-            # 获取要设置为阈值的概率的索引
-            i = int((s.shape[0] - 1) * ratio)  
-            assert i >= 0
-            
-            # 设置tau的值
-            self.tau[0] = s[i]  
 
+                # 添加到概率列表
+                probabilities.append(x_cent)
+
+            # 将所有概率连接并排序
+            s, _ = torch.sort(torch.cat(probabilities, dim=0))
+
+            # 获取要设置为阈值的概率的索引
+            i = int((s.shape[0] - 1) * ratio)
+            assert i >= 0
+
+            # 设置tau的值
+            self.tau[0] = s[i]
 
     def fit(self, train_data_producer, validation_data_producer, attack, attack_param,
             epochs=50, lr=0.005, weight_decay=0., verbose=True):
@@ -362,7 +370,8 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
                 assert not attack.is_attacker
 
         # 使用Adam优化器初始化优化过程
-        optimizer = optim.Adam(self.amd_nn_plus.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = optim.Adam(self.amd_nn_plus.parameters(),
+                               lr=lr, weight_decay=weight_decay)
         best_avg_acc = 0.  # 用于存储最佳的平均准确率
         best_epoch = 0  # 用于存储最佳准确率对应的轮次
         total_time = 0.  # 用于存储总训练时间
@@ -380,7 +389,8 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
             # 遍历所有的训练数据批次
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
                 # 将数据移动到指定的设备上（例如GPU）
-                x_train, y_train = utils.to_device(x_train.double(), y_train.long(), self.device)
+                x_train, y_train = utils.to_device(
+                    x_train.double(), y_train.long(), self.device)
 
                 # 开始生成异常数据
                 start_time = time.time()
@@ -393,7 +403,8 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
                     # 对对抗样本进行四舍五入处理（针对StepwiseMax方法生成的连续样本）
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
                     # 检查生成的对抗样本与原始样本之间是否有任何差异
-                    trivial_atta_flag = torch.sum(torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
+                    trivial_atta_flag = torch.sum(
+                        torch.abs(x_train - pertb_x), dim=-1)[:] == 0.
                     # 如果所有对抗样本都与原始样本相同，则跳过这个批次
                     if torch.all(trivial_atta_flag):
                         pertb_train_data_list.append([])
@@ -401,7 +412,8 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
                     # 只保存那些与原始样本不同的对抗样本
                     pertb_x = pertb_x[~trivial_atta_flag]
                     # 将对抗样本添加到列表中
-                    pertb_train_data_list.append(pertb_x.detach().cpu().numpy())
+                    pertb_train_data_list.append(
+                        pertb_x.detach().cpu().numpy())
                 else:
                     # 使用之前存储的对抗样本
                     pertb_x = pertb_train_data_list[idx_batch]
@@ -414,7 +426,8 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
                 # 计算扩展后的批次大小
                 batch_size_ext = x_train.shape[0]
                 # 为对抗样本创建新的标签（这里为2）
-                y_train = torch.cat([y_train, 2 * torch.ones((pertb_x.shape[0],), dtype=torch.long, device=self.device)])
+                y_train = torch.cat(
+                    [y_train, 2 * torch.ones((pertb_x.shape[0],), dtype=torch.long, device=self.device)])
                 # 随机打乱数据和标签的顺序
                 idx = torch.randperm(batch_size_ext)
                 x_train = x_train[idx]
@@ -456,29 +469,34 @@ class AMalwareDetectionDNNPlus(nn.Module, DetectorTemplate):
             # 遍历所有的验证数据批次
             for idx, (x_val, y_val) in enumerate(validation_data_producer):
                 # 将数据移动到指定的设备上（例如GPU）
-                x_val, y_val = utils.to_device(x_val.double(), y_val.long(), self.device)
+                x_val, y_val = utils.to_device(
+                    x_val.double(), y_val.long(), self.device)
 
                 # 为验证数据生成对抗样本 ⭐
                 if idx >= len(pertb_val_data_list):
                     pertb_x = attack.perturb(self.md_nn_model, x_val, y_val,
-                                            **attack_param
-                                            )
+                                             **attack_param
+                                             )
                     pertb_x = utils.round_x(pertb_x, alpha=0.5)
                     # 检查生成的对抗样本与原始样本之间是否有任何差异
-                    trivial_atta_flag = torch.sum(torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
+                    trivial_atta_flag = torch.sum(
+                        torch.abs(x_val - pertb_x), dim=-1)[:] == 0.
                     # 断言至少有一个对抗样本与原始样本不同
-                    assert (not torch.all(trivial_atta_flag)), 'No modifications.'
+                    assert (not torch.all(trivial_atta_flag)
+                            ), 'No modifications.'
                     # 只保存那些与原始样本不同的对抗样本
                     pertb_x = pertb_x[~trivial_atta_flag]
                     pertb_val_data_list.append(pertb_x.detach().cpu().numpy())
                 else:
                     # 使用之前存储的对抗样本
-                    pertb_x = torch.from_numpy(pertb_val_data_list[idx]).to(self.device)
+                    pertb_x = torch.from_numpy(
+                        pertb_val_data_list[idx]).to(self.device)
 
                 # 将原始数据和对抗样本合并
                 x_val = torch.cat([x_val, pertb_x], dim=0)
                 # 为对抗样本创建新的标签（这里为2）
-                y_val = torch.cat([y_val, 2 * torch.ones((pertb_x.shape[0],), device=self.device)])
+                y_val = torch.cat(
+                    [y_val, 2 * torch.ones((pertb_x.shape[0],), device=self.device)])
 
                 # 获取模型的预测输出
                 logits, _1 = self.forward(x_val)

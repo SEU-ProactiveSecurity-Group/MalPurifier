@@ -1,3 +1,6 @@
+import torch
+import numpy as np
+import scipy.sparse as sp
 import json
 import os
 import signal
@@ -14,10 +17,6 @@ import string
 import base64
 
 ENC_KEY = 'cab228a122d3486bac7fab148e8b5aba'
-
-import scipy.sparse as sp
-import numpy as np
-import torch
 
 
 def pool_initializer():
@@ -57,7 +56,8 @@ def retrive_files_set(base_dir, dir_ext, file_ext):
         file_exts = ['']
     file_path_list = list()
     for ext in file_exts:
-        file_path_list.extend(get_file_name(os.path.join(base_dir, dir_ext), ext))
+        file_path_list.extend(get_file_name(
+            os.path.join(base_dir, dir_ext), ext))
     # remove duplicate elements
     from collections import OrderedDict
     return list(OrderedDict.fromkeys(file_path_list))
@@ -80,7 +80,8 @@ def check_dir(sample_dir):
         else:
             raise ValueError(" No such path {}".format(sample_dir))
     elif isinstance(sample_dir, list):
-        sample_path_list = [path for path in sample_dir if os.path.isfile(path)]
+        sample_path_list = [
+            path for path in sample_dir if os.path.isfile(path)]
     else:
         MSG = "A directory or a list of paths are allowed!"
         raise ValueError(MSG)
@@ -238,7 +239,8 @@ class SimplifyClass:
 
     def get(self, key):
         if not self.use_cache:
-            raise AttributeError('Data caching is disabled and get funciton is unavailable! Check your config.')
+            raise AttributeError(
+                'Data caching is disabled and get funciton is unavailable! Check your config.')
         return self._dict[str(key)]
 
     def cache(self, key, img, lbl):
@@ -282,7 +284,8 @@ def load_args(fout):
 
 def get_group_args(args, args_parser, title):
     import argparse
-    assert isinstance(args, argparse.Namespace) and isinstance(args_parser, argparse.ArgumentParser)
+    assert isinstance(args, argparse.Namespace) and isinstance(
+        args_parser, argparse.ArgumentParser)
     for group in args_parser._action_groups:
         if group.title == title:
             return {action.dest: getattr(args, action.dest, None) for action in group._group_actions}
@@ -300,8 +303,11 @@ def ivs_to_tensor_coo_sp(ivs, device='cpu'):
 
 
 def sp_to_symmetric_sp(sparse_mx):
-    sparse_mx = sparse_mx + sparse_mx.T.multiply(sparse_mx.T > sparse_mx) - sparse_mx.multiply(sparse_mx.T > sparse_mx)
-    sparse_eye = sp.csr_matrix(sparse_mx.sum(axis=0) > 1e-8).T.multiply(sp.eye(sparse_mx.shape[0]))
+    sparse_mx = sparse_mx + \
+        sparse_mx.T.multiply(sparse_mx.T > sparse_mx) - \
+        sparse_mx.multiply(sparse_mx.T > sparse_mx)
+    sparse_eye = sp.csr_matrix(sparse_mx.sum(
+        axis=0) > 1e-8).T.multiply(sp.eye(sparse_mx.shape[0]))
     return (sparse_mx.multiply(1. - np.eye(*sparse_eye.shape))).tocsr() + sparse_eye
 
 
@@ -452,7 +458,8 @@ def get_mal_data(x_batch, y_batch):
     """
     malware feature vectors
     """
-    assert isinstance(x_batch, torch.Tensor) and isinstance(y_batch, torch.Tensor)
+    assert isinstance(x_batch, torch.Tensor) and isinstance(
+        y_batch, torch.Tensor)
     mal_x_batch = x_batch[y_batch == 1]
     mal_y_batch = y_batch[y_batch == 1]
     null_flag = len(mal_x_batch) <= 0
@@ -463,7 +470,8 @@ def get_mal_ben_data(x_batch, y_batch):
     """
     malware feature vectors
     """
-    assert isinstance(x_batch, torch.Tensor) and isinstance(y_batch, torch.Tensor)
+    assert isinstance(x_batch, torch.Tensor) and isinstance(
+        y_batch, torch.Tensor)
     mal_x_batch = x_batch[y_batch == 1]
     ben_x_batch = x_batch[y_batch == 0]
     mal_y_batch = y_batch[y_batch == 1]
@@ -473,6 +481,7 @@ def get_mal_ben_data(x_batch, y_batch):
 #################################################################################
 ################################# smali code ####################################
 #################################################################################
+
 
 def java_class_name2smali_name(cls):
     """
@@ -495,7 +504,8 @@ def remove_duplicate(components):
     elif isinstance(components, str):
         return '.'.join(list(filter(None, components.strip().split('.'))))
     else:
-        raise TypeError("Types of 'list' and 'str' are expected, but got {}.".format(type(components)))
+        raise TypeError(
+            "Types of 'list' and 'str' are expected, but got {}.".format(type(components)))
 
 
 def crypt_identifier(idf, seed=2345):
@@ -540,13 +550,15 @@ def random_name(seed=2345, code='abc'):
     if not isinstance(seed, int):
         raise TypeError("Integer required.", type(seed), seed)
     random.seed(seed)
-    sample_letters = [random.sample(string.ascii_letters, 1)[0] for _ in range(12)]
+    sample_letters = [random.sample(string.ascii_letters, 1)[
+        0] for _ in range(12)]
     return random.choice(string.ascii_uppercase) + random_string(code) + ''.join(sample_letters)
 
 
 def apply_encryption(base_string):
     key = ENC_KEY * int(len(base_string) / len(ENC_KEY) + 1)
-    xor_string = ''.join(chr(ord(x) ^ ord(y)) for (x, y) in zip(base_string, key))
+    xor_string = ''.join(chr(ord(x) ^ ord(y))
+                         for (x, y) in zip(base_string, key))
     return base64.b64encode(xor_string.encode('utf-8')).decode('utf-8')
 
 

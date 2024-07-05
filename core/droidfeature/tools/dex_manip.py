@@ -9,7 +9,8 @@ from tools.utils import *
 
 curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-CONST_STR = 'android/content/res/'  # the append smali files will be put at the folder smali/android/contect/res of new APK
+# the append smali files will be put at the folder smali/android/contect/res of new APK
+CONST_STR = 'android/content/res/'
 ANNOTATION_REF = '''
     .annotation system Ldalvik/annotation/Throws;
         value = {
@@ -94,7 +95,7 @@ def get_param_smali_type(params, is_smali=True):
 
     if is_smali:
         class_param_types = params.split(';')
-        for pt in class_param_types:  # type: string
+        for pt in class_param_types:
             pt = pt.strip().replace(' ', '')
             if pt == '':
                 continue
@@ -111,22 +112,26 @@ def get_param_smali_type(params, is_smali=True):
                     tmp_prefix.append(c)
                 elif c == 'L':
                     if len(tmp_prefix) > 0:
-                        param_types_smali.append(''.join(tmp_prefix) + pt[i:] + ";")
+                        param_types_smali.append(
+                            ''.join(tmp_prefix) + pt[i:] + ";")
                     else:
                         param_types_smali.append(pt[i:] + ";")
                     break
                 else:
                     # print("okfdfd ", pt, i, c, params)
-                    raise ValueError("The symbol '{}' are negected".format(str(c)))
+                    raise ValueError(
+                        "The symbol '{}' are negected".format(str(c)))
         return param_types_smali
     else:
         # here, the parameter type is split by symbol ','
         param_types_java = params.split(',')
         assert isinstance(param_types_java, list)
         for param_type in param_types_java:
-            if '[' not in param_type:  # we here only do not consider the advance variable type, e.g., generic type '<T>'
+            # we here only do not consider the advance variable type, e.g., generic type '<T>'
+            if '[' not in param_type:
                 if param_type in javaBasicT_to_SmaliBasicT.keys():
-                    param_types_smali.append(javaBasicT_to_SmaliBasicT[param_type])
+                    param_types_smali.append(
+                        javaBasicT_to_SmaliBasicT[param_type])
                 else:
                     param_type = param_type.replace('.', '/')
                     param_types_smali.append('L' + param_type + ';')
@@ -138,7 +143,8 @@ def get_param_smali_type(params, is_smali=True):
                 else:
                     prefix_array = param_type.replace(raw_param_type, '')
                     raw_param_type = raw_param_type.replace('.', '/')
-                    param_types_smali.append(prefix_array + 'L' + raw_param_type + ';')
+                    param_types_smali.append(
+                        prefix_array + 'L' + raw_param_type + ';')
         return param_types_smali
 
 
@@ -158,7 +164,8 @@ def encrypt_line(smali_line, name_string, encryption_class_name):
             field_var_name = field_match.group('fieldName')
             field_value = field_match.group('fieldValue')
             if field_var_name == name_string and '$' not in name_string:
-                print(smali_line.replace('"' + field_value + '"', '"' + enc_name_string + '"').rstrip())
+                print(smali_line.replace('"' + field_value +
+                      '"', '"' + enc_name_string + '"').rstrip())
             else:
                 print(smali_line.rstrip())
         else:
@@ -177,8 +184,10 @@ def encrypt_line(smali_line, name_string, encryption_class_name):
             print(smali_line.rstrip())
             return is_modified
 
-        v_string = const_string_match.group('regType') + const_string_match.group('regNum')
-        print('    ' + const_string_match.group('constType') + ' ' + v_string + ', "' + enc_name_string + '"')
+        v_string = const_string_match.group(
+            'regType') + const_string_match.group('regNum')
+        print('    ' + const_string_match.group('constType') +
+              ' ' + v_string + ', "' + enc_name_string + '"')
         print('')
         print(
             '    invoke-static/range {' + v_string + ' .. ' + v_string + '}, ' + 'L' + CONST_STR + encryption_class_name + ';->convertToString(Ljava/lang/String;)Ljava/lang/String;')
@@ -230,15 +239,19 @@ def encrypt_string(all_smali_paths, name_string, mod_count=1):
         fh.close()
 
     if is_modified:
-        smali_root_path = list(all_smali_paths)[0].split('/smali/')[0] + '/smali'
+        smali_root_path = list(all_smali_paths)[
+            0].split('/smali/')[0] + '/smali'
         write_decryption_smali_dir = os.path.join(smali_root_path, CONST_STR)
 
         if not os.path.exists(write_decryption_smali_dir):
             os.makedirs(write_decryption_smali_dir)
-        decryption_class = read_full_file(os.path.join(curr_dir, 'res/DecryptString.smali'))
+        decryption_class = read_full_file(
+            os.path.join(curr_dir, 'res/DecryptString.smali'))
 
-        decryption_class = decryption_class.replace('DecryptString', enc_class_name)
-        dst_path = os.path.join(write_decryption_smali_dir, enc_class_name + ".smali")
+        decryption_class = decryption_class.replace(
+            'DecryptString', enc_class_name)
+        dst_path = os.path.join(
+            write_decryption_smali_dir, enc_class_name + ".smali")
 
         if not os.path.exists(dst_path):
             write_whole_file(decryption_class, dst_path)
@@ -273,11 +286,13 @@ def change_source_name(smali_paths, act_source_name, act_dst_name):
     try:
         assert len(src_subnames) == len(dst_subnames)
     except Exception:
-        raise AssertionError("Alignment error: source name does not align with destination name.")
+        raise AssertionError(
+            "Alignment error: source name does not align with destination name.")
 
     for sf in smali_paths:
         for smali_line in read_file_by_fileinput(sf, inplace=True):
-            source_match = re.search(r'^([ ]*?)\.source(.*?)\"(?P<source_name>([^\"]*?))\"', smali_line)
+            source_match = re.search(
+                r'^([ ]*?)\.source(.*?)\"(?P<source_name>([^\"]*?))\"', smali_line)
 
             if source_match is not None:
                 naive_source_name = source_match.group('source_name')
@@ -286,7 +301,8 @@ def change_source_name(smali_paths, act_source_name, act_dst_name):
                 for _, niv_name in enumerate(niv_src_subnames):
                     for i, src_name in enumerate(src_subnames):
                         if niv_name in src_name:
-                            new_name = new_name.replace(niv_name, dst_subnames[i])
+                            new_name = new_name.replace(
+                                niv_name, dst_subnames[i])
                 smali_line = smali_line.replace(naive_source_name, new_name)
             print(smali_line.rstrip())
 
@@ -308,7 +324,8 @@ def change_method_name(block_smali_method, rdm_number=2):
             new_smali_lines.append(smali_line)
         else:
             method_name = method_def_match.group('methodName')
-            new_smali_lines.append(smali_line.replace(method_name + '(', method_name + random_name(rdm_number) + '('))
+            new_smali_lines.append(smali_line.replace(
+                method_name + '(', method_name + random_name(rdm_number) + '('))
 
     return '\n'.join(new_smali_lines)
 
@@ -441,11 +458,14 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
         new_invoke_type = new_invoke_type + '/range'
 
     # put the original invoked object to arguments if ivk_type is public
-    new_smali_line = '    ' + new_invoke_type + ' {' + ivk_param + '}, ' + new_class_name + '->' + new_method_name + '(' + extra_argument + ivk_argument + ')' + ivk_return
+    new_smali_line = '    ' + new_invoke_type + ' {' + ivk_param + '}, ' + new_class_name + \
+        '->' + new_method_name + \
+        '(' + extra_argument + ivk_argument + ')' + ivk_return
     print(new_smali_line.rstrip())
 
     # generate the new method
-    method_declaration = '.method public static ' + new_method_name + '(' + extra_argument + ivk_argument + ')' + ivk_return
+    method_declaration = '.method public static ' + new_method_name + \
+        '(' + extra_argument + ivk_argument + ')' + ivk_return
     if method_declaration in method_fh:
         return method_fh
 
@@ -455,7 +475,8 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
     list_arguments = list(split_invoke_argument(ivk_argument))
     count_arguments = len(list_arguments)
 
-    method_fh = method_fh + '    ' + '.locals ' + str(5 + count_arguments) + '\n'
+    method_fh = method_fh + '    ' + '.locals ' + \
+        str(5 + count_arguments) + '\n'
     method_fh = method_fh + ANNOTATION_REF + '\n'
 
     # reflection for method
@@ -463,8 +484,10 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
     method_fh = method_fh + '    ' + 'const-string v1, \"' + ivk_method + '\"' + '\n\n'
 
     # handle class
-    method_fh = method_fh + '    ' + 'const v2, ' + hex(count_arguments) + '\n\n'  # array length
-    method_fh = method_fh + '    ' + 'new-array v3, v2, [Ljava/lang/Class;' + '\n\n'  # array
+    method_fh = method_fh + '    ' + 'const v2, ' + \
+        hex(count_arguments) + '\n\n'  # array length
+    method_fh = method_fh + '    ' + \
+        'new-array v3, v2, [Ljava/lang/Class;' + '\n\n'  # array
     for idx, arg in enumerate(list_arguments):
         # obtain class
         class_type = basic_class_dict.get(arg, '')
@@ -473,15 +496,19 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
         else:
             method_fh = method_fh + '    ' + 'const-class v4, ' + arg + '\n\n'
         # assign value for the array
-        method_fh = method_fh + '    ' + 'const v{}, '.format(5 + idx) + hex(idx) + '\n\n'  # index
-        method_fh = method_fh + '    ' + 'aput-object v4, v3, v{}'.format(5 + idx) + '\n\n'
+        method_fh = method_fh + '    ' + \
+            'const v{}, '.format(5 + idx) + hex(idx) + '\n\n'  # index
+        method_fh = method_fh + '    ' + \
+            'aput-object v4, v3, v{}'.format(5 + idx) + '\n\n'
 
     # call 'getMethod'
-    method_fh = method_fh + '    ' + 'invoke-virtual {v0, v1, v3}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;' + '\n\n'
+    method_fh = method_fh + '    ' + \
+        'invoke-virtual {v0, v1, v3}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;' + '\n\n'
     method_fh = method_fh + '    ' + 'move-result-object v0' + '\n\n'
 
     # handle object (class instantiation)
-    method_fh = method_fh + '    ' + 'new-array v1, v2, [Ljava/lang/Object;' + '\n\n'
+    method_fh = method_fh + '    ' + \
+        'new-array v1, v2, [Ljava/lang/Object;' + '\n\n'
     if is_static:
         param_idx = 0  # no need p0
     else:
@@ -499,19 +526,24 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
             method_fh = method_fh + object_tail_invocation + '\n\n'
             method_fh = method_fh + '    ' + 'move-result-object v2' + '\n\n'
             # put into object array
-            method_fh = method_fh + '    ' + 'aput-object v2, v1, v{}'.format(idx + 5) + '\n\n'
+            method_fh = method_fh + '    ' + \
+                'aput-object v2, v1, v{}'.format(idx + 5) + '\n\n'
             if is_wide_type(arg):
                 param_idx = param_idx + 1  # wide type of value occupys two registers
         else:
-            method_fh = method_fh + '    ' + 'aput-object p' + str(param_idx) + ', v1, v{}'.format(idx + 5) + '\n\n'
+            method_fh = method_fh + '    ' + 'aput-object p' + \
+                str(param_idx) + ', v1, v{}'.format(idx + 5) + '\n\n'
         param_idx = param_idx + 1
 
     # call Invoke, note that static method has no p0
     if is_static:
-        method_fh = method_fh + '    ' + 'const-class v2, ' + ivk_object + '\n\n'  # v2 could be null (i.e., const v2, 0x0)?
-        method_fh = method_fh + '    ' + 'invoke-virtual {v0, v2, v1}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;' + '\n\n'
+        method_fh = method_fh + '    ' + 'const-class v2, ' + \
+            ivk_object + '\n\n'  # v2 could be null (i.e., const v2, 0x0)?
+        method_fh = method_fh + '    ' + \
+            'invoke-virtual {v0, v2, v1}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;' + '\n\n'
     else:
-        method_fh = method_fh + '    ' + 'invoke-virtual {v0, p0, v1}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;' + '\n\n'
+        method_fh = method_fh + '    ' + \
+            'invoke-virtual {v0, p0, v1}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;' + '\n\n'
 
     is_void_value = is_void(ivk_return)
     is_obj_value = is_obj(ivk_return)
@@ -528,7 +560,9 @@ def change_invoke_by_ref(new_class_name, method_fh, ivk_type, ivk_param, ivk_obj
         method_fh = method_fh + '    ' + 'move-result-object v0' + '\n\n'
         method_fh = method_fh + '    ' + 'check-cast v0, ' + rt_type + '\n\n'
         basic_type_value_getting = reverse_cast_dict.get(ivk_return, '')
-        method_fh = method_fh + '    ' + 'invoke-virtual/range {v0 .. v0}, ' + basic_type_value_getting + '\n\n'
+        method_fh = method_fh + '    ' + \
+            'invoke-virtual/range {v0 .. v0}, ' + \
+            basic_type_value_getting + '\n\n'
         if is_wide_value:
             method_fh = method_fh + '    ' + 'move-result-wide v0' + '\n\n'
             method_fh = method_fh + '    ' + 'return-wide v0' + '\n\n'
@@ -570,7 +604,8 @@ def retrieve_methods(disassembly_dir):
                 else:
                     continue
                 for line in lines:
-                    class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
+                    class_match = re.search(
+                        r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
                     if class_match is not None:
                         class_name = class_match.group('className')
                     method_match = re.match(
@@ -601,7 +636,8 @@ def retrieve_api_caller_info(api_name, disassembly_dir):
                 if ('->' + api_method_name) in context:
                     lines = context.split('\n')
                     for line in lines:
-                        class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
+                        class_match = re.search(
+                            r'^([ ]*?)\.class(.*?)(?P<className>L([^;\(\) ]*?);)', line)
                         if class_match is not None:
                             callee_class_name = class_match.group('className')
                         if '.method ' in line:
@@ -612,16 +648,22 @@ def retrieve_api_caller_info(api_name, disassembly_dir):
                                 line)
                             if invoke_match is not None:
                                 info_dict = info_dict_temp.copy()
-                                info_dict['ivk_method'] = invoke_match['invokeType'] + ' ' + invoke_match['invokeObject'] + '->' + invoke_match['invokeMethod'] + '(' + invoke_match['invokeArgument'] + ')' + invoke_match['invokeReturn']
+                                info_dict['ivk_method'] = invoke_match['invokeType'] + ' ' + invoke_match['invokeObject'] + '->' + \
+                                    invoke_match['invokeMethod'] + \
+                                    '(' + invoke_match['invokeArgument'] + \
+                                    ')' + invoke_match['invokeReturn']
                                 info_dict['caller_cls_name'] = callee_class_name
                                 info_dict['caller_mth_stm'] = tmp_method_statement
                                 if api_class_name in invoke_match['invokeObject']:
                                     api_info.append(info_dict)
                                 else:
-                                    ext_path = invoke_match['invokeObject'].strip().lstrip('L').rstrip(';') + '.smali'
+                                    ext_path = invoke_match['invokeObject'].strip().lstrip(
+                                        'L').rstrip(';') + '.smali'
                                     ext_path.replace('/', '\\')
-                                    samli_path = os.path.join(smali_dir, ext_path)
-                                    super_class_names = get_super_class_name(samli_path)  # look for first-order predecessors
+                                    samli_path = os.path.join(
+                                        smali_dir, ext_path)
+                                    super_class_names = get_super_class_name(
+                                        samli_path)  # look for first-order predecessors
                                     if api_class_name in super_class_names:
                                         api_info.append(info_dict)
                                     else:
@@ -637,13 +679,14 @@ def get_super_class_name(smali_path):
     with open(smali_path) as fh:
         lines = fh.readlines()
         for line in lines:
-            class_match = re.search(r'^([ ]*?)\.super(.*?)(?P<className>L([^;\(\) ]*?);)', line)
+            class_match = re.search(
+                r'^([ ]*?)\.super(.*?)(?P<className>L([^;\(\) ]*?);)', line)
             if class_match is not None:
                 super_class.append(class_match['className'])
     return super_class
 
 
-def fix_invalid_id(comp_name, spec_chr = '@&'):
+def fix_invalid_id(comp_name, spec_chr='@&'):
     comp_name = comp_name.replace('$;', spec_chr+';')
     comp_name = comp_name.replace('$/', spec_chr+'/')
     if comp_name[-1] == '$':
@@ -660,9 +703,9 @@ def path_split(path):
     return dir_name, file_name, ext_name
 
 
-def rename_file(src,dst):
+def rename_file(src, dst):
     try:
-        os.rename(src,dst)
+        os.rename(src, dst)
     except IOError as ex:
         raise IOError("Cannot rename the file '{}' to '{}'".format(src, dst))
 
@@ -674,9 +717,9 @@ def rename_smali_file(smali_path, activity_name, new_activity_name):
 
     if not os.path.exists(smali_path) or (act_name not in smali_path):
         return
-    #try:
+    # try:
     #    assert(act_name in file_name)
-    #except AssertionError:
+    # except AssertionError:
     #    raise AssertionError("assert error:{}".format(smali_path))
 
     src = os.path.join(dir_name, file_name + ext_name)
@@ -691,7 +734,7 @@ def rename_smali_file(smali_path, activity_name, new_activity_name):
         new_file_name = '$'.join(inner_names)
         dst = os.path.join(dir_name, new_file_name + ext_name)
 
-    rename_file(src,dst)
+    rename_file(src, dst)
 
 
 def rename_dir(old, new):
@@ -702,8 +745,10 @@ def rename_dir(old, new):
 
 
 def rename_tree_dir(old_name, new_name):
-    old_folder_names = re.findall(r'[^\/]*?\/', (old_name + '/').replace('//', '/'))
-    new_folder_names = re.findall(r'[^\/]*?\/', (new_name + '/').replace('//', '/'))
+    old_folder_names = re.findall(
+        r'[^\/]*?\/', (old_name + '/').replace('//', '/'))
+    new_folder_names = re.findall(
+        r'[^\/]*?\/', (new_name + '/').replace('//', '/'))
 
     assert len(old_folder_names) == len(new_folder_names)
 
@@ -751,7 +796,8 @@ def change_class_name(smali_paths, source_name, dst_name, pkg_name):
     for sf in smali_paths:
         fi_sf = read_file_by_fileinput(sf, inplace=True)
         for smali_line in fi_sf:
-            class_match = re.search(r'^([ ]*?)\.class(.*?)(?P<class_name>L([^;\(\) ]*?);)', smali_line)
+            class_match = re.search(
+                r'^([ ]*?)\.class(.*?)(?P<class_name>L([^;\(\) ]*?);)', smali_line)
             if class_match is not None:
                 class_name = class_match.group('class_name')
                 if act_src_path in class_name:
@@ -761,6 +807,7 @@ def change_class_name(smali_paths, source_name, dst_name, pkg_name):
             else:
                 print(smali_line.rstrip())
         fi_sf.close()
+
 
 def change_instantition_name(smali_paths, related_class, source_name, dst_name, pkg_name):
     """

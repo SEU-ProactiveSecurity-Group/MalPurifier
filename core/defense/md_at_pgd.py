@@ -34,14 +34,14 @@ class PGDAdvTraining(object):
     def __init__(self, model, attack=None, attack_param=None):
         # 初始化被保护的模型
         self.model = model
-        
+
         # 如果提供了攻击模型，则检查它是否是PGD类型
         if attack is not None:
             assert isinstance(attack, PGD)
             # 确保attack对象的属性中不包含'is_attacker'或该属性的值为False
             if 'is_attacker' in attack.__dict__.keys():
                 assert not attack.is_attacker
-                
+
         # 初始化攻击模型和攻击参数
         self.attack = attack
         self.attack_param = attack_param
@@ -53,8 +53,8 @@ class PGDAdvTraining(object):
                                          'model.pth')
         self.model.model_save_path = self.model_save_path
         # 日志输出：正在进行的对抗训练攻击类型
-        logger.info("Adversarial training incorporating the attack {}".format(type(self.attack).__name__))
-
+        logger.info("Adversarial training incorporating the attack {}".format(
+            type(self.attack).__name__))
 
     def fit(self, train_data_producer, validation_data_producer=None, epochs=5, adv_epochs=45,
             beta=0.001,
@@ -74,17 +74,19 @@ class PGDAdvTraining(object):
         @param weight_decay: 浮点数, 惩罚因子，默认值为5e-4
         @param verbose: 布尔值, 是否显示详细信息
         """
-        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)  # 定义优化器
+        optimizer = optim.Adam(self.model.parameters(),
+                               lr=lr, weight_decay=weight_decay)  # 定义优化器
         total_time = 0.  # 记录总训练时间
         nbatches = len(train_data_producer)  # 计算数据批次数
         logger.info("对抗训练开始 ...")
         best_acc_val = 0.  # 最佳验证准确率
-        acc_val_adv_be = 0.  
+        acc_val_adv_be = 0.
         best_epoch = 0  # 最佳轮次
         for i in range(adv_epochs):
             losses, accuracies = [], []  # 记录每轮的损失和准确率
             for idx_batch, (x_batch, y_batch) in enumerate(train_data_producer):
-                x_batch, y_batch = utils.to_tensor(x_batch.double(), y_batch.long(), self.model.device)  # 数据转为张量
+                x_batch, y_batch = utils.to_tensor(
+                    x_batch.double(), y_batch.long(), self.model.device)  # 数据转为张量
                 batch_size = x_batch.shape[0]
                 # 分割数据为恶意和良性
                 mal_x_batch, ben_x_batch, mal_y_batch, ben_y_batch, null_flag = \
@@ -93,13 +95,13 @@ class PGDAdvTraining(object):
                     continue
                 start_time = time.time()
                 self.model.eval()  # 设置模型为评估模式
-                
+
                 # ⭐ 对数据进行对抗扰动
                 pertb_mal_x = self.attack.perturb(self.model, mal_x_batch, mal_y_batch,
-                                                **self.attack_param
-                                                )
+                                                  **self.attack_param
+                                                  )
                 total_time += time.time() - start_time
-                
+
                 # 合并对抗样本和原始样本
                 x_batch = torch.cat([ben_x_batch, pertb_mal_x], dim=0)
                 y_batch = torch.cat([ben_y_batch, mal_y_batch])
@@ -108,14 +110,16 @@ class PGDAdvTraining(object):
                 optimizer.zero_grad()  # 清零梯度
                 logits = self.model.forward(x_batch)  # 前向传播
                 loss_train = self.model.customize_loss(logits,
-                                                    y_batch)  # 计算损失
+                                                       y_batch)  # 计算损失
 
                 loss_train.backward()  # 反向传播
                 optimizer.step()  # 更新参数
 
                 total_time += time.time() - start_time
-                mins, secs = int(total_time / 60), int(total_time % 60)  # 计算训练时间
-                acc_train = (logits.argmax(1) == y_batch).sum().item()  # 计算训练准确率
+                mins, secs = int(
+                    total_time / 60), int(total_time % 60)  # 计算训练时间
+                acc_train = (logits.argmax(1) ==
+                             y_batch).sum().item()  # 计算训练准确率
                 acc_train /= x_batch.size()[0]
                 accuracies.append(acc_train)  # 记录准确率
                 losses.append(loss_train.item())  # 记录损失
@@ -142,14 +146,16 @@ class PGDAdvTraining(object):
 
             # 遍历验证数据集
             for x_val, y_val in validation_data_producer:
-                x_val, y_val = utils.to_tensor(x_val.double(), y_val.long(), self.model.device)
+                x_val, y_val = utils.to_tensor(
+                    x_val.double(), y_val.long(), self.model.device)
                 logits = self.model.forward(x_val)
                 acc_val = (logits.argmax(1) == y_val).sum().item()
                 acc_val /= x_val.size()[0]
                 avg_acc_val.append(acc_val)
 
                 # 获取验证数据集中的恶意数据
-                mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(x_val, y_val)
+                mal_x_batch, mal_y_batch, null_flag = utils.get_mal_data(
+                    x_val, y_val)
                 if null_flag:
                     continue
 
@@ -159,7 +165,8 @@ class PGDAdvTraining(object):
                                                   )
 
                 # 对扰动后的数据进行预测
-                y_cent_batch, x_density_batch = self.model.inference_batch_wise(pertb_mal_x)
+                y_cent_batch, x_density_batch = self.model.inference_batch_wise(
+                    pertb_mal_x)
                 y_pred = np.argmax(y_cent_batch, axis=-1)
                 res_val.append(y_pred == 1.)
 
@@ -205,18 +212,17 @@ class PGDAdvTraining(object):
         ckpt = torch.load(self.model_save_path)
         self.model.load_state_dict(ckpt['model'])
 
-
     # save_to_disk 方法用于将模型权重、当前的epoch和优化器状态保存到磁盘上的指定路径。
     # 如果保存路径不存在，它会首先创建这个路径。然后，使用PyTorch的 torch.save 方法将数据保存到指定路径。
+
     def save_to_disk(self, epoch, optimizer, save_path=None):
         # 检查保存路径是否存在，如果不存在则创建相应的文件夹
         if not path.exists(save_path):
             utils.mkdir(path.dirname(save_path))
-        
+
         # 保存模型权重、当前的epoch和优化器状态到指定路径
         torch.save({'model': self.model.state_dict(),
                     'epoch': epoch,
                     'optimizer_state_dict': optimizer.state_dict()
                     },
                    save_path)
-

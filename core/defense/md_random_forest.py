@@ -1,4 +1,10 @@
 from __future__ import absolute_import
+from sklearn.ensemble import RandomForestClassifier
+from tqdm import tqdm
+import pickle
+from sklearn.preprocessing import StandardScaler
+from sklearn.calibration import CalibratedClassifierCV
+import os
 from __future__ import division
 from __future__ import print_function
 
@@ -30,13 +36,6 @@ logger = logging.getLogger('core.defense.rf')
 # 向日志记录器添加一个错误处理器，确保错误信息被适当捕获和处理
 logger.addHandler(ErrorHandler)
 
-import os
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.preprocessing import StandardScaler
-import pickle
-from tqdm import tqdm
-
-from sklearn.ensemble import RandomForestClassifier
 
 class MalwareDetectionRF:
     def __init__(self, n_estimators=100, device='cpu', max_depth=None, random_state=0, name='RF', **kwargs):
@@ -50,38 +49,38 @@ class MalwareDetectionRF:
         @param random_state: 整数，随机状态，用于重现结果。
         @param name: 字符串，用于命名模型。
         """
-        
+
         del kwargs
-        
+
         self.n_estimators = n_estimators
         self.max_depth = max_depth
         self.random_state = random_state
         self.name = name
         self.device = device          # 定义运行设备
         self.n_classes = 2            # 二分类
-        
-        self.model = RandomForestClassifier(n_estimators=self.n_estimators, 
-                                            max_depth=self.max_depth, 
+
+        self.model = RandomForestClassifier(n_estimators=self.n_estimators,
+                                            max_depth=self.max_depth,
                                             random_state=self.random_state,
                                             n_jobs=-1)
 
         self.scaler = StandardScaler()  # 用于数据标准化
-        
+
         # 定义模型的保存路径
         self.model_save_path = path.join(config.get('experiments', 'rf') + '_' + self.name,
                                          'model.pkl')
 
-    def eval(self): 
+    def eval(self):
         pass
 
     def forward(self, x):
         """
         通过随机森林模型获取预测的置信度
-        
+
         参数
         ----------
         @param x: 2D张量或数组，特征表示
-        
+
         返回值
         ----------
         返回预测的置信度
@@ -104,15 +103,15 @@ class MalwareDetectionRF:
         confidences = torch.tensor(confidences, dtype=torch.float32)
 
         return confidences
-    
+
     def inference(self, test_data_producer):
         """
         进行模型推理，获得预测的置信度和真实标签
-        
+
         参数
         ----------
         @param test_data_producer: 数据生产者或数据加载器，用于产生测试数据
-        
+
         返回值
         ----------
         返回预测的置信度和真实标签
@@ -134,17 +133,17 @@ class MalwareDetectionRF:
         confidences = np.vstack(confidences)
         # 将所有批次的真实标签连接成一个数组
         gt_labels = np.hstack(gt_labels)
-        
+
         return confidences, gt_labels
 
     def inference_dae(self, test_data_producer):
         """
         进行模型推理，获得预测的置信度和真实标签
-        
+
         参数
         ----------
         @param test_data_producer: 数据生产者或数据加载器，用于产生测试数据
-        
+
         返回值
         ----------
         返回预测的置信度和真实标签
@@ -164,7 +163,6 @@ class MalwareDetectionRF:
 
         return confidences, gt_labels
 
-
     def fit(self, train_data_producer):
         # 初始化列表，以便稍后将数据转换为NumPy数组
         all_X_train = []
@@ -179,7 +177,7 @@ class MalwareDetectionRF:
         # 将列表转换为NumPy数组
         X_train = np.vstack(all_X_train)
         y_train = np.hstack(all_y_train)
-        
+
         print("X_train.shape:", X_train.shape)
 
         # 标准化数据
@@ -195,10 +193,10 @@ class MalwareDetectionRF:
         end_time = time.time()
 
         training_time = end_time - start_time
-        logger.info(f'{self.name} model trained successfully in {training_time} seconds.')
-        
-        self.save_model()
+        logger.info(
+            f'{self.name} model trained successfully in {training_time} seconds.')
 
+        self.save_model()
 
     def inference_batch_wise(self, x):
         """
@@ -223,8 +221,7 @@ class MalwareDetectionRF:
 
         # 返回每个样本的置信度和一个与logit形状相同的全1数组（表示恶意软件样本）
         return confidences, np.ones((confidences.size()[0],))
-    
-    
+
     def predict(self, test_data_producer, indicator_masking=True):
         """
         预测标签并进行评估
@@ -262,19 +259,17 @@ class MalwareDetectionRF:
         print("Other evaluation metrics we may need:")
         MSG = "False Negative Rate (FNR) is {:.5f}%、False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
         logger.info(MSG.format(fnr * 100, fpr * 100, f1 * 100))
-        
-        
+
     def save_model(self):
         """
         保存当前模型到磁盘。
         """
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
-        
+
         with open(self.model_save_path, 'wb') as file:
             pickle.dump({'model': self.model, 'scaler': self.scaler}, file)
         logger.info(f'Model saved to {self.model_save_path}')
-
 
     def load(self):
         """
@@ -288,7 +283,6 @@ class MalwareDetectionRF:
             logger.info(f'Model loaded from {self.model_save_path}')
         else:
             logger.error(f'Model file not found at {self.model_save_path}')
-            
-            
+
     def load_state_dict(self):
-        self.load()        
+        self.load()

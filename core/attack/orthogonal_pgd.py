@@ -64,7 +64,8 @@ class OrthogonalPGD(PGD):
         adv_x = x.clone().detach()
         batch_size = x.shape[0]
 
-        assert hasattr(model, 'is_detector_enabled'), 'Expected an adversary detector'
+        assert hasattr(
+            model, 'is_detector_enabled'), 'Expected an adversary detector'
         model.eval()
 
         # 遍历预定的步骤数来扰动输入数据
@@ -73,7 +74,8 @@ class OrthogonalPGD(PGD):
             # 如果是第一次迭代并且设置了 use_random 标志，
             # 使用 get_x0 函数可能会向对抗样本添加一些随机噪声
             if t == 0 and self.use_random:
-                adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
+                adv_x = get_x0(
+                    adv_x, rounding_threshold=self.round_threshold, is_sample=True)
 
             # 将对抗样本转换为 PyTorch 变量，这样在反向传播期间
             # 我们可以相对于它计算梯度
@@ -84,7 +86,8 @@ class OrthogonalPGD(PGD):
 
             # 计算分类器预测的 logits 与真实标签之间的交叉熵损失。
             # 这度量了模型的预测与实际标签的匹配程度
-            ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
+            ce = torch.mean(F.cross_entropy(
+                logits_classifier, label, reduction='none'))
 
             # 反向传播此损失以计算损失相对于模型参数和输入对抗样本的梯度
             ce.backward(retain_graph=True)
@@ -117,8 +120,8 @@ class OrthogonalPGD(PGD):
                 # then grad_d' = grad_d - (project grad_d onto grad_c)
                 grad_detector_proj = grad_detector - torch.bmm(
                     (torch.bmm(grad_detector.view(batch_size, 1, -1), grad_classifier.view(batch_size, -1, 1))) / (
-                            1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
-                                              grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
+                        1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
+                                          grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_classifier.view(batch_size, 1, -1)).view(grad_detector.shape)
             else:
                 grad_detector_proj = grad_detector
@@ -129,16 +132,18 @@ class OrthogonalPGD(PGD):
                 # then grad_c' = grad_c - (project grad_c onto grad_d)
                 grad_classifier_proj = grad_classifier - torch.bmm(
                     (torch.bmm(grad_classifier.view(batch_size, 1, -1), grad_detector.view(batch_size, -1, 1))) / (
-                            1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
-                                              grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
+                        1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
+                                          grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_detector.view(batch_size, 1, -1)).view(grad_classifier.shape)
             else:
                 grad_classifier_proj = grad_classifier
 
             # has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
             disc_logits_classifier, _1 = model.forward(round_x(adv_x))
-            disc_logits_classifier[range(batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 20
-            has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[:, None].float()  # customized label
+            disc_logits_classifier[range(
+                batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 20
+            has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[
+                :, None].float()  # customized label
 
             if self.k:
                 # take gradients of g onto f every kth step
@@ -148,7 +153,7 @@ class OrthogonalPGD(PGD):
                     grad = grad_classifier_proj
             else:
                 grad = grad_classifier_proj * (
-                        1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
+                    1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
 
             # if torch.any(torch.isnan(grad)):
             #     print(torch.mean(torch.isnan(grad)))
@@ -162,11 +167,14 @@ class OrthogonalPGD(PGD):
                     torch.tensor(1., dtype=x.dtype, device=x.device),
                     grad / l2norm
                 )
-                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
-                perturbation = torch.where(torch.isinf(perturbation), 1., perturbation)
+                perturbation = torch.where(
+                    torch.isnan(perturbation), 0., perturbation)
+                perturbation = torch.where(
+                    torch.isinf(perturbation), 1., perturbation)
             elif self.norm == 'l1':
                 val, idx = torch.abs(grad).topk(int(1. / step_length), dim=-1)
-                perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1)
+                perturbation = F.one_hot(
+                    idx, num_classes=adv_x.shape[-1]).sum(dim=1)
                 perturbation = torch.sign(grad) * perturbation
                 # if self.is_attacker:
                 #     perturbation += (
@@ -174,18 +182,19 @@ class OrthogonalPGD(PGD):
                 #                       keepdim=True) * nonexist_api)
             else:
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
-            adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
+            adv_x = torch.clamp(adv_x + perturbation *
+                                step_length, min=0., max=1.)
         # round
         return round_x(adv_x)
-    
+
     def _perturb_dae(self,
-                 predict_model,                 
-                 dae_model,
-                 x,
-                 label=None,
-                 steps=10,
-                 step_length=1.,
-                 ):
+                     predict_model,
+                     dae_model,
+                     x,
+                     label=None,
+                     steps=10,
+                     step_length=1.,
+                     ):
         """
         perturb node feature vectors
 
@@ -212,7 +221,8 @@ class OrthogonalPGD(PGD):
             # 如果是第一次迭代并且设置了 use_random 标志，
             # 使用 get_x0 函数可能会向对抗样本添加一些随机噪声
             if t == 0:
-                adv_x = get_x0(adv_x, rounding_threshold=self.round_threshold, is_sample=True)
+                adv_x = get_x0(
+                    adv_x, rounding_threshold=self.round_threshold, is_sample=True)
 
             # 将对抗样本转换为 PyTorch 变量，这样在反向传播期间
             # 我们可以相对于它计算梯度
@@ -223,7 +233,8 @@ class OrthogonalPGD(PGD):
 
             # 计算分类器预测的 logits 与真实标签之间的交叉熵损失。
             # 这度量了模型的预测与实际标签的匹配程度
-            ce = torch.mean(F.cross_entropy(logits_classifier, label, reduction='none'))
+            ce = torch.mean(F.cross_entropy(
+                logits_classifier, label, reduction='none'))
 
             # 反向传播此损失以计算损失相对于模型参数和输入对抗样本的梯度
             ce.backward(retain_graph=True)
@@ -240,7 +251,7 @@ class OrthogonalPGD(PGD):
 
             # 计算探测器的损失。负号意味着我们可能试图
             # 最大化这个损失（例如，使对抗样本更难以检测）
-            
+
             var_adv_x = var_adv_x.to(torch.float32).to(dae_model.device)
 
             # 使用DAE模型清洗对抗样本
@@ -251,10 +262,11 @@ class OrthogonalPGD(PGD):
             var_adv_x = var_adv_x.clone().detach().requires_grad_(True)
 
             # 使用DAE的损失函数
-            total_loss = dae_model.loss_function(var_adv_x, Purified_adv_x_batch, label, predict_model)
+            total_loss = dae_model.loss_function(
+                var_adv_x, Purified_adv_x_batch, label, predict_model)
 
             loss_detector = -torch.mean(total_loss)
-            
+
             # 反向传播该损失以计算梯度
             loss_detector.backward()
 
@@ -262,7 +274,8 @@ class OrthogonalPGD(PGD):
             if var_adv_x.grad is not None:
                 grad_detector = var_adv_x.grad.detach().data
             else:
-                raise ValueError("var_adv_x does not have gradients. Check the loss computation.")
+                raise ValueError(
+                    "var_adv_x does not have gradients. Check the loss computation.")
 
             # 使用自定义函数可能转换或处理梯度
             grad_detector = self.trans_grads(grad_detector, adv_x)
@@ -273,8 +286,8 @@ class OrthogonalPGD(PGD):
                 # then grad_d' = grad_d - (project grad_d onto grad_c)
                 grad_detector_proj = grad_detector - torch.bmm(
                     (torch.bmm(grad_detector.view(batch_size, 1, -1), grad_classifier.view(batch_size, -1, 1))) / (
-                            1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
-                                              grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
+                        1e-20 + torch.bmm(grad_classifier.view(batch_size, 1, -1),
+                                          grad_classifier.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_classifier.view(batch_size, 1, -1)).view(grad_detector.shape)
             else:
                 grad_detector_proj = grad_detector
@@ -285,16 +298,18 @@ class OrthogonalPGD(PGD):
                 # then grad_c' = grad_c - (project grad_c onto grad_d)
                 grad_classifier_proj = grad_classifier - torch.bmm(
                     (torch.bmm(grad_classifier.view(batch_size, 1, -1), grad_detector.view(batch_size, -1, 1))) / (
-                            1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
-                                              grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
+                        1e-20 + torch.bmm(grad_detector.view(batch_size, 1, -1),
+                                          grad_detector.view(batch_size, -1, 1))).view(-1, 1, 1),
                     grad_detector.view(batch_size, 1, -1)).view(grad_classifier.shape)
             else:
                 grad_classifier_proj = grad_classifier
 
             # has_attack_succeeded = (logits_classifier.argmax(1) == 0.)[:, None].float()
             disc_logits_classifier = predict_model.forward(round_x(adv_x))
-            disc_logits_classifier[range(batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 20
-            has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[:, None].float()  # customized label
+            disc_logits_classifier[range(
+                batch_size), 0] = disc_logits_classifier[range(batch_size), 0] - 20
+            has_attack_succeeded = (disc_logits_classifier.argmax(1) == 0.)[
+                :, None].float()  # customized label
 
             if self.k:
                 # take gradients of g onto f every kth step
@@ -304,7 +319,7 @@ class OrthogonalPGD(PGD):
                     grad = grad_classifier_proj
             else:
                 grad = grad_classifier_proj * (
-                        1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
+                    1. - has_attack_succeeded) + grad_detector_proj * has_attack_succeeded
 
             # if torch.any(torch.isnan(grad)):
             #     print(torch.mean(torch.isnan(grad)))
@@ -318,11 +333,14 @@ class OrthogonalPGD(PGD):
                     torch.tensor(1., dtype=x.dtype, device=x.device),
                     grad / l2norm
                 )
-                perturbation = torch.where(torch.isnan(perturbation), 0., perturbation)
-                perturbation = torch.where(torch.isinf(perturbation), 1., perturbation)
+                perturbation = torch.where(
+                    torch.isnan(perturbation), 0., perturbation)
+                perturbation = torch.where(
+                    torch.isinf(perturbation), 1., perturbation)
             elif self.norm == 'l1':
                 val, idx = torch.abs(grad).topk(int(1. / step_length), dim=-1)
-                perturbation = F.one_hot(idx, num_classes=adv_x.shape[-1]).sum(dim=1)
+                perturbation = F.one_hot(
+                    idx, num_classes=adv_x.shape[-1]).sum(dim=1)
                 perturbation = torch.sign(grad) * perturbation
                 # if self.is_attacker:
                 #     perturbation += (
@@ -330,9 +348,10 @@ class OrthogonalPGD(PGD):
                 #                       keepdim=True) * nonexist_api)
             else:
                 raise ValueError("Expect 'l2', 'linf' or 'l1' norm.")
-            adv_x = torch.clamp(adv_x + perturbation * step_length, min=0., max=1.)
+            adv_x = torch.clamp(adv_x + perturbation *
+                                step_length, min=0., max=1.)
         # round
-        return round_x(adv_x)    
+        return round_x(adv_x)
 
     def perturb(self, model, x, label=None,
                 steps=10,
@@ -365,16 +384,16 @@ class OrthogonalPGD(PGD):
             _, done = self.get_loss(model, adv_x, label, self.lambda_)
             # If verbose is enabled, log the attack effectiveness
             if verbose:
-                logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
+                logger.info(
+                    f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
         # Return the perturbed samples
         return adv_x
-    
-    
+
     def perturb_dae(self, predict_model, purifier, x, label=None,
-                steps=10,
-                step_length=1.,
-                verbose=False,
-                oblivion=False):
+                    steps=10,
+                    step_length=1.,
+                    verbose=False,
+                    oblivion=False):
         """
         Enhance the attack.
         """
@@ -387,27 +406,32 @@ class OrthogonalPGD(PGD):
         adv_x = x.detach().clone()
         with torch.no_grad():
             # Get the loss and completion status for the current sample
-            purified_adv = purifier(adv_x.detach().clone().float()).to(torch.double)       
-            _, done = self.get_loss(predict_model, purified_adv, label, self.lambda_)
+            purified_adv = purifier(
+                adv_x.detach().clone().float()).to(torch.double)
+            _, done = self.get_loss(
+                predict_model, purified_adv, label, self.lambda_)
         # If all samples are done, return immediately
         if torch.all(done):
             return adv_x
         # Perturb the samples that are not yet done
         pert_x = self._perturb_dae(predict_model, purifier, adv_x[~done], label[~done],
-                               steps,
-                               step_length
-                               )
+                                   steps,
+                                   step_length
+                                   )
         # Update the perturbed samples in adv_x
         adv_x[~done] = pert_x
         with torch.no_grad():
             # Get the loss and completion status again
-            purified_adv = purifier(adv_x.detach().clone().float()).to(torch.double)
-            _, done = self.get_loss(predict_model, purified_adv, label, self.lambda_)
+            purified_adv = purifier(
+                adv_x.detach().clone().float()).to(torch.double)
+            _, done = self.get_loss(
+                predict_model, purified_adv, label, self.lambda_)
             # If verbose is enabled, log the attack effectiveness
             if verbose:
-                logger.info(f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
+                logger.info(
+                    f"pgd {self.norm}: attack effectiveness {done.sum().item() / done.size()[0] * 100:.3f}%.")
         # Return the perturbed samples
-        return adv_x    
+        return adv_x
 
     def trans_grads(self, gradients, adv_features):
         # 查找允许的位置。
@@ -424,7 +448,8 @@ class OrthogonalPGD(PGD):
         pos_removal = (adv_features > 0.5) * 1
 
         # 只有当梯度是负的（即值应该减少），且该位置允许移除和满足某些其他条件(self.manipulation_x)时，我们才考虑这些梯度
-        grad4removal = (gradients < 0) * (pos_removal & self.manipulation_x) * gradients
+        grad4removal = (gradients < 0) * (pos_removal &
+                                          self.manipulation_x) * gradients
 
         # 将两组梯度结合在一起并返回
         return grad4removal + grad4insertion

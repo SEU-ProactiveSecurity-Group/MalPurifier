@@ -3,6 +3,7 @@ import builtins
 from pprint import pprint
 import sys
 
+
 def print(*args, **kwargs):
     # Open the file in append mode
     with open('feature_example.txt', 'a') as f:
@@ -11,6 +12,7 @@ def print(*args, **kwargs):
 
     # # Call the original print function to print to the console
     # builtins.print(*args, **kwargs)
+
 
 # apk_feature = pickle.load( open( "./feature_example.pkl", "rb" ) )
 # pprint(apk_feature)

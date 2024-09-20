@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import torch
 
-from core.defense import Dataset  # 导入防御模块中的Dataset类
+from core.defense import Dataset
 
 from core.defense import MalwareDetectionDNN, PGDAdvTraining, RFGSMAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
     AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus, DAE, VAE_SU, \
@@ -101,8 +101,8 @@ def _main():
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
     
-        # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")    
+    # Print the total number of malicious samples
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
     
     
     
@@ -293,7 +293,7 @@ def _main():
             predict_model_save_path = os.path.join(config.get('experiments', 'md_rnn') + '_' + model.predict_model_name,
                                             'model.pth')          
             
-        print("[⭐] Basic Model: ", predict_model_save_path)
+        print("Basic Model: ", predict_model_save_path)
         
         if args.basic_model == 'rf' or args.basic_model == 'dt':
             predict_model.load()
@@ -306,7 +306,7 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     
-    # 对测试集进行预测
+    # Predict on the test set
     if args.model == 'dae':
         model.predict(mal_test_dataset_producer, predict_model, indicator_masking=False)
     else:
@@ -324,11 +324,11 @@ def _main():
     model.eval()
 
     if args.model == 'dae':
-        # 对筛选后的数据进行处理
+        # Process the filtered data
         for x, y in mal_test_dataset_producer:
-            # 数据格式转换和设备迁移
+            # Data format conversion and device migration
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
-            # 对模型进行对抗攻击并得到对抗样本
+            # Perform adversarial attack on the model and obtain adversarial samples
             adv_x_batch = attack.perturb_dae(predict_model, model, x, y,
                                         args.steps,
                                         min_lambda_=1e-5,
@@ -337,15 +337,15 @@ def _main():
                                         verbose=True,
                                         oblivion=args.oblivion)
 
-            # 对抗样本的数据类型转换
+            # Convert adversarial samples to float32
             adv_x_batch = adv_x_batch.to(torch.float32)
 
-            # 使用当前模型清洗对抗样本
+            # Clean the adversarial samples using the current model
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
 
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
+            # Use the prediction model to predict on the cleaned adversarial samples
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             
             y_cent_list.append(y_cent_batch)

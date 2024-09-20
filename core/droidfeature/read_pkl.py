@@ -10,8 +10,8 @@ def print(*args, **kwargs):
         # Call the original print function and set the output to the file
         builtins.print(*args, **kwargs, file=f)
 
-    # # Call the original print function to print to the console
-    # builtins.print(*args, **kwargs)
+    # Call the original print function to print to the console
+    builtins.print(*args, **kwargs)
 
 
 # apk_feature = pickle.load( open( "./feature_example.pkl", "rb" ) )

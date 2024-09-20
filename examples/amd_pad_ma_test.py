@@ -121,51 +121,48 @@ def _main():
         }
     else:
         raise NotImplementedError("Expected 'max' and 'stepwise_max'.")
-    
-    # 初始化一个针对恶意软件检测的对抗性训练模型
+
+    # Initialize an adversarial training model for malware detection
     max_adv_training_model = AMalwareDetectionPAD(model, attack, attack_param)
 
-    # 如果运行模式为“train”，则开始训练
+    # If the run mode is 'train', start training
     if args.mode == 'train':
-        # 使用指定的参数进行对抗性训练
+        # Perform adversarial training using specified parameters
         max_adv_training_model.fit(
-            train_dataset_producer,      # 训练数据生成器
-            val_dataset_producer,        # 验证数据生成器
-            adv_epochs=args.epochs,      # 对抗性训练的迭代次数
-            beta_1=args.beta_1,          # 优化器Adam的beta1参数
-            beta_2=args.beta_2,          # 优化器Adam的beta2参数
-            lmda_lower_bound=args.lambda_lb,  # lambda的下界值
-            lmda_upper_bound=args.lambda_ub,  # lambda的上界值
-            use_continuous_pert=args.use_cont_pertb,  # 是否使用连续的扰动
-            lr=args.lr,                  # 学习率
-            under_sampling_ratio=args.under_sampling,  # 下采样比例
-            weight_decay=args.weight_decay   # 权重衰减率，用于正则化
+            train_dataset_producer,      # Training data generator
+            val_dataset_producer,        # Validation data generator
+            adv_epochs=args.epochs,      # Number of adversarial training epochs
+            beta_1=args.beta_1,          # Optimizer Adam's beta1 parameter
+            beta_2=args.beta_2,          # Optimizer Adam's beta2 parameter
+            lmda_lower_bound=args.lambda_lb,  # Lambda's lower bound value
+            lmda_upper_bound=args.lambda_ub,  # Lambda's upper bound value
+            use_continuous_pert=args.use_cont_pertb,  # Whether to use continuous perturbations
+            lr=args.lr,                  # Learning rate
+            under_sampling_ratio=args.under_sampling,  # Under-sampling ratio
+            weight_decay=args.weight_decay   # Weight decay rate for regularization
         )
 
-        # 从硬盘加载模型
+        # Load the model from disk
         max_adv_training_model.load()
         
-        # 根据验证数据集计算决策阈值
+        # Calculate the decision threshold based on the validation dataset
         max_adv_training_model.model.get_threshold(val_dataset_producer)
         
-        # 将模型保存到硬盘
+        # Save the model to disk
         max_adv_training_model.save_to_disk(max_adv_training_model.model_save_path)
 
-        # 以易读的格式保存模型的参数
+        # Save the model's parameters in a readable format
         save_args(path.join(path.dirname(max_adv_training_model.model_save_path), "hparam"), vars(args))
-        
-        # 以pickle格式保存模型的参数，以便之后重建神经网络模型
+        # Save the model's parameters in pickle format for future reconstruction of the neural network model
         dump_pickle(vars(args), path.join(path.dirname(max_adv_training_model.model_save_path), "hparam.pkl"))
 
-    # 加载模型并评估其准确性
-    # 从硬盘加载模型
+    # Load the model and evaluate its accuracy
+    # Load the model from disk
     max_adv_training_model.load()
-    # 根据指定的比例和验证数据集计算决策阈值
+    # Calculate the decision threshold based on the specified ratio and validation dataset
     max_adv_training_model.model.get_threshold(val_dataset_producer, ratio=args.ratio)
-    # 使用测试数据集评估模型的预测准确性
+    # Evaluate the model's prediction accuracy using the test dataset
     max_adv_training_model.model.predict(test_dataset_producer, indicator_masking=True)
-
-
 
 if __name__ == '__main__':
     _main()

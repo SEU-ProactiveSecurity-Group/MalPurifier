@@ -9,7 +9,7 @@ import torch
 import pickle
 import joblib
 
-from core.defense import Dataset  # 导入防御模块中的Dataset类
+from core.defense import Dataset
 
 from core.defense import MalwareDetectionDNN, PGDAdvTraining, RFGSMAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
     AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus, DAE, VAE_SU, \
@@ -26,11 +26,11 @@ atta_argparse = argparse.ArgumentParser(description='arguments for pointwise att
 atta_argparse.add_argument('--trials', type=int, default=10,
                            help='number of benign samples for perturbing one malicious file.')
 atta_argparse.add_argument('--steps', type=int, default=10,
-                           help='重复攻击的次数。')
+                           help='number of attack repetitions.')
 atta_argparse.add_argument('--max_eta', type=float, default=0.01,
                            help='salt and pepper max eta')
 atta_argparse.add_argument('--epsilon', type=int, default=1000,
-                           help='确定尝试的扰动量的个数。')
+                           help='number of perturbation attempts.')
 atta_argparse.add_argument('--n_ben', type=int, default=5000,
                            help='number of benign samples.')
 atta_argparse.add_argument('--oblivion', action='store_true', default=False,
@@ -42,14 +42,13 @@ atta_argparse.add_argument('--model', type=str, default='maldet',
                                     'amd_kde', 'amd_icnn', 'amd_dla', 'amd_dnn_plus',
                                     'amd_pad_ma', 'fd_vae', 'dae',
                                     'md_svm', 'rf', 'md_cnn', 'md_fcn', 'md_lstm', 'dt', 'md_rnn'],
-                           help="model type, either of 'md_dnn', 'md_at_pgd', 'md_at_ma', 'md_at_fgsm', 'amd_kde', 'amd_icnn', "
-                                "'amd_dla', 'amd_dnn_plus', 'amd_pad_ma', 'fd_vae', 'dae', 'md_svm', 'rf', 'md_cnn', 'md_fcn', 'md_lstm', 'dt', 'md_rnn'.")
+                           help="model type")
 
 atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 
 atta_argparse.add_argument('--basic_model', type=str, default='md_dnn',
                            choices=['md_dnn', 'md_svm', 'rf', 'md_cnn', 'md_fcn', 'md_lstm', 'dt', 'md_rnn'],
-                           help="'md_dnn', 'md_svm', 'rf', 'md_cnn', 'md_fcn', 'md_lstm', 'dt', 'md_rnn'")
+                           help="basic model type")
 
 atta_argparse.add_argument('--basic_model_name', type=str, default='20230724-230516',
                            help='dnn basic_model_name')
@@ -109,12 +108,9 @@ def _main():
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
         
-                
-    # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")    
+    # Print total number of malicious samples
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
     
-    
-        
     mal_count = len(mal_testy)
     ben_test_x, ben_testy = test_x[testy == 0], testy[testy == 0]
     ben_count = len(ben_test_x)
@@ -311,7 +307,7 @@ def _main():
             predict_model_save_path = os.path.join(config.get('experiments', 'md_rnn') + '_' + model.predict_model_name,
                                             'model.pth')          
             
-        print("[⭐] Basic Model: ", predict_model_save_path)
+        print("Basic Model: ", predict_model_save_path)
         
         if args.basic_model == 'rf' or args.basic_model == 'dt':
             predict_model.load()
@@ -345,7 +341,7 @@ def _main():
     y_cent_list, x_density_list = [], []
     
     if args.model == 'dae':
-        # 对每个恶意样本执行模仿攻击
+        # Perform mimicry attack for each malicious sample
         for x, y in mal_test_dataset_producer:
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
             _flag, adv_x_batch, x_mod = attack.perturb_dae(model,
@@ -360,17 +356,16 @@ def _main():
             adv_x_batch = torch.DoubleTensor(adv_x_batch)
             adv_x_batch = adv_x_batch.to(torch.float32).to(model.device)
 
-            # 使用当前模型清洗对抗样本
+            # Clean adversarial samples using current model
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
             
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
+            # Predict using prediction model on cleaned adversarial samples
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             y_cent_list.append(y_cent_batch)
 
-        # 求出预测结果
-        # 求出预测结果
+        # Get prediction results
         y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
         logger.info(
             'max_eta: %s, Attack trials: %s, The mean accuracy on adversarial malware is %.3f%%',
@@ -399,12 +394,11 @@ def _main():
             x_mod_list.append(x_mod)
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch)
             
-            # 收集数据
+            # Collect data
             y_cent_list.append(y_cent_batch)
             x_density_list.append(x_density_batch)
-            # x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
         
-        # 求出预测结果
+        # Get prediction results
         y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
         logger.info(
             'max_eta: %s, repetition: %s, epsilon: %s, The mean accuracy on adversarial malware is %.3f%%',
@@ -423,13 +417,11 @@ def _main():
         if not os.path.exists(save_dir):
             utils.mkdir(save_dir)
 
-        # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
         attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                save_dir=adv_app_dir)
 
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
-        # dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],

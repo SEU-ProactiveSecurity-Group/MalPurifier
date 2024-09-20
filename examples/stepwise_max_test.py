@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import torch
 
-from core.defense import Dataset  # 导入防御模块中的Dataset类
+from core.defense import Dataset  # Import Dataset class from defense module
 
 from core.defense import MalwareDetectionDNN, PGDAdvTraining, RFGSMAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
     AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus, DAE, VAE_SU, \
@@ -110,9 +110,8 @@ def _main():
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
     
-        # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")    
-    
+    # Print the total number of malicious samples
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
     
     mal_count = len(mal_testy)
     if mal_count <= 0:
@@ -300,7 +299,7 @@ def _main():
             predict_model_save_path = os.path.join(config.get('experiments', 'md_rnn') + '_' + model.predict_model_name,
                                             'model.pth')          
             
-        print("[⭐] Basic Model: ", predict_model_save_path)
+        print("Basic Model: ", predict_model_save_path)
         
         if args.basic_model == 'rf' or args.basic_model == 'dt':
             predict_model.load()
@@ -312,7 +311,7 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
-    # 对测试集进行预测
+    # Predict on the test set
     if args.model == 'dae':
         model.predict(mal_test_dataset_producer, predict_model, indicator_masking=False)
     else:
@@ -331,39 +330,38 @@ def _main():
     x_adv_samples = []
     
     
-    # 将模型设置为评估模式。在评估模式下，模型的某些特定层，如Dropout和BatchNorm，会有不同的行为
+    # Set the model to evaluation mode
     model.eval()
 
     if args.model == 'dae':
-        # 对筛选后的数据进行处理
+        # Process the filtered data
         for x, y in mal_test_dataset_producer:
-            # 数据格式转换和设备迁移
+            # Data format conversion and device migration
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
             if not args.oblivion:
                 x = model(x.float()).double()  
             
-            # 对模型进行对抗攻击并得到对抗样本
-            # 对每一个批次的数据应用对抗性攻击以得到对抗性样本
+            # Perform adversarial attack on the model and obtain adversarial samples
             adv_x_batch = attack.perturb_dae(predict_model, model, x, y,
                                         args.steps,
                                         args.step_check,
                                         args.step_length_l1,
                                         args.step_length_l2,
                                         args.step_length_linf,
-                                        min_lambda_=1e-3,      # 新添加的参数，表示lambda的最小值
-                                        max_lambda_=1e-3,      # 新添加的参数，表示lambda的最大值
+                                        min_lambda_=1e-3,
+                                        max_lambda_=1e-3,
                                         verbose=True,
                                         oblivion=args.oblivion)
 
-            # 对抗样本的数据类型转换
+            # Convert adversarial samples to float32
             adv_x_batch = adv_x_batch.to(torch.float32)
 
-            # 使用当前模型清洗对抗样本
+            # Clean the adversarial samples using the current model
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
 
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
+            # Use the prediction model to predict on the cleaned adversarial samples
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             
             y_cent_list.append(y_cent_batch)
@@ -372,36 +370,36 @@ def _main():
         logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / len(y_pred) * 100:.3f}%')
     
     else:
-        # 遍历恶意测试数据集
+        # Iterate through the malicious test dataset
         for x, y in mal_test_dataset_producer:
-            # 将数据和标签转换为适当的数据类型，并将其移至模型所在的设备（例如GPU或CPU）
+            # Convert data and labels to appropriate data types and move them to the device where the model is (e.g., GPU or CPU)
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
 
-            # 对每一个批次的数据应用对抗性攻击以得到对抗性样本
+            # Apply adversarial attack to each batch of data to obtain adversarial samples
             adv_x_batch = attack.perturb(model, x, y,
                                         args.steps,
                                         args.step_check,
                                         args.step_length_l1,
                                         args.step_length_l2,
                                         args.step_length_linf,
-                                        min_lambda_=1e-3,      # 新添加的参数，表示lambda的最小值
-                                        max_lambda_=1e-3,      # 新添加的参数，表示lambda的最大值
+                                        min_lambda_=1e-3,
+                                        max_lambda_=1e-3,
                                         verbose=True)
 
-            # 对每个对抗性样本进行预测，得到中心预测和密度值
+            # Predict for each adversarial sample, obtaining central predictions and density values
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch)
 
-            # 将得到的预测结果和对抗性样本的信息保存到对应的列表中
+            # Save the prediction results and information about the adversarial samples to the corresponding lists
             y_cent_list.append(y_cent_batch)
             x_density_list.append(x_density_batch)
             x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
             x_adv_samples.append((adv_x_batch).detach().cpu().numpy())
 
-        # 综合所有的预测结果来评估对抗性样本的预测准确率
+        # Evaluate the prediction accuracy of adversarial samples by combining all prediction results
         y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
         logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
-    # 如果模型定义中包含了指标方法，则评估并打印该指标的有效性
+    # If the model definition includes an indicator method, evaluate and print the effectiveness of this indicator
     if 'indicator' in type(model).__dict__.keys():
         indicator_flag = model.indicator(np.concatenate(x_density_list), y_pred)
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
@@ -417,7 +415,6 @@ def _main():
                                config.get('dataset', 'malware_dir'),
                                save_dir=adv_app_dir)
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
-        # dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],

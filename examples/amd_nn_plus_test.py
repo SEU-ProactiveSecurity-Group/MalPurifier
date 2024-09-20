@@ -40,7 +40,6 @@ def _main():
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
     assert dataset.n_classes == 2
 
-    # test: model training
     if not args.cuda:
         dv = 'cpu'
     else:
@@ -97,31 +96,24 @@ def _main():
     else:
         raise NotImplementedError("Expected 'max' and 'stepwise_max'.")
 
-    # 如果模式为训练
     if args.mode == 'train':
-        # 使用提供的参数和攻击方法对cls_plus_model模型进行训练
-        cls_plus_model.fit(train_dataset_producer,  # 训练数据
-                        val_dataset_producer,    # 验证数据
-                        attack,                  # 攻击方法
-                        attack_param,            # 攻击参数
-                        epochs=args.epochs,      # 训练的周期
-                        lr=args.lr,              # 学习率
-                        weight_decay=args.weight_decay  # 权重衰减
+        cls_plus_model.fit(train_dataset_producer,  # training data
+                        val_dataset_producer,    # validation data
+                        attack,                  # attack method
+                        attack_param,            # attack parameters
+                        epochs=args.epochs,      # training epochs
+                        lr=args.lr,              # learning rate
+                        weight_decay=args.weight_decay  # weight decay
                         )
         
-        # 将模型的参数以人类可读的格式保存
         save_args(path.join(path.dirname(cls_plus_model.model_save_path), "hparam"), vars(args))
         
-        # 将模型的参数序列化并保存，以便后续重建神经网络
         dump_pickle(vars(args), path.join(path.dirname(cls_plus_model.model_save_path), "hparam.pkl"))
 
-    # 从磁盘加载cls_plus_model模型
     cls_plus_model.load()
 
-    # 获取验证数据集上的阈值
     cls_plus_model.get_threshold(val_dataset_producer, ratio=args.ratio)
 
-    # 使用cls_plus_model模型进行预测并评估其在测试集上的性能
     cls_plus_model.predict(test_dataset_producer, indicator_masking=True)
 
 

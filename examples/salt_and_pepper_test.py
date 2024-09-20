@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import torch
 
-from core.defense import Dataset  # 导入防御模块中的Dataset类
+from core.defense import Dataset
 
 from core.defense import MalwareDetectionDNN, PGDAdvTraining, RFGSMAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
     AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus, DAE, VAE_SU
@@ -24,13 +24,13 @@ atta_argparse.add_argument('--trials', type=int, default=10,
                            help='number of benign samples for perturbing one malicious file.')
 
 atta_argparse.add_argument('--epsilon', type=int, default=10,
-                           help='确定尝试的扰动量的个数。')  # epsilon: 与样本特征的数量一起确定尝试的扰动量的个数
+                           help='Determines the number of perturbation attempts.')
 
 atta_argparse.add_argument('--max_eta', type=float, default=0.001,
-                           help='噪声的最大强度。')  # 它代表噪声的最大强度。这个参数在攻击过程中会动态调整，但其初始值可能影响攻击的起始强度。
+                           help='Maximum noise intensity.')
 
 atta_argparse.add_argument('--steps', type=int, default=10,
-                           help='重复攻击的次数。')  # 添加命令行参数
+                           help='Number of attack repetitions.')
 
 atta_argparse.add_argument('--n_ben', type=int, default=5000,
                            help='number of benign samples.')
@@ -93,8 +93,7 @@ def _main():
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
         
                 
-    # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")    
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
     
     
         
@@ -206,7 +205,7 @@ def _main():
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     model.eval()
     
-    # 对测试集进行预测
+    # Predict on test set
     if args.model == 'dae':
         model.predict(mal_test_dataset_producer, predict_model, indicator_masking=False)
     else:
@@ -223,9 +222,7 @@ def _main():
         ben_feature_vectors = torch.vstack(ben_feature_vectors)[:c]
 
     attack = Salt_and_pepper(ben_feature_vectors, oblivion=args.oblivion, device=model.device)
-    # success_flag_list = []
     y_cent_list, x_density_list = [], []
-    # x_mod_integrated = []
     x_mod_list = []
 
     if args.model == 'dae':
@@ -244,16 +241,13 @@ def _main():
                                         is_apk=args.real,
                                         verbose=True)      
                   
-            # convert numpy.ndarray to tensor
             adv_x_batch = torch.DoubleTensor(adv_x_batch)
             adv_x_batch = adv_x_batch.to(torch.float32).to(model.device)
 
-            # 使用当前模型清洗对抗样本
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
             
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             y_cent_list.append(y_cent_batch)
 
@@ -273,7 +267,6 @@ def _main():
                                         is_apk=args.real,
                                         verbose=True)
             
-            # convert numpy.ndarray to tensor
             adv_x_batch = torch.DoubleTensor(adv_x_batch)
             adv_x_batch = adv_x_batch.to(torch.float64).to(model.device)
             
@@ -281,12 +274,9 @@ def _main():
             x_mod_list.append(x_mod)
             y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch)
             
-            # 收集数据
             y_cent_list.append(y_cent_batch)
             x_density_list.append(x_density_batch)
-            # x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
         
-        # 求出预测结果
         y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
         logger.info(
             f'The mean accuracy on adversarial malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
@@ -300,13 +290,11 @@ def _main():
         if not os.path.exists(save_dir):
             utils.mkdir(save_dir)
 
-        # x_mod_list = utils.read_pickle_frd_space(os.path.join(save_dir, 'x_mod.list'))
         attack.produce_adv_mal(x_mod_list, mal_test_x.tolist(),
                                config.get('dataset', 'malware_dir'),
                                save_dir=adv_app_dir)
 
         adv_feature_paths = dataset.apk_preprocess(adv_app_dir, update_feature_extraction=True)
-        # dataset.feature_preprocess(adv_feature_paths)
         adv_test_dataset_producer = dataset.get_input_producer(adv_feature_paths,
                                                                np.ones((len(adv_feature_paths, ))),
                                                                batch_size=hp_params['batch_size'],

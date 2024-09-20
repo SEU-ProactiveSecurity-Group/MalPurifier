@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import torch
 
-from core.defense import Dataset  # 导入防御模块中的Dataset类
+from core.defense import Dataset
 
 from core.defense import MalwareDetectionDNN, PGDAdvTraining, RFGSMAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
     AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus, DAE, VAE_SU
@@ -44,7 +44,7 @@ atta_argparse.add_argument('--model', type=str, default='maldet',
                            help="model type, either of 'md_dnn', 'md_at_pgd', 'md_at_ma', 'amd_kde', 'amd_icnn', "
                                 "'amd_dla', 'amd_dnn_plus', 'amd_pad_ma', 'fd_vae', 'dae'.")
 
-atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='模型时间戳。')  # 添加命令行参数
+atta_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', help='model timestamp.')
 atta_argparse.add_argument('--basic_dnn_name', type=str, default='20230724-230516',
                            help='basic_dnn_name')
 
@@ -86,8 +86,8 @@ def _main():
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
         
             
-    # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")    
+    # Print the total number of malicious samples
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
     
     
     mal_count = len(mal_testy)
@@ -192,14 +192,13 @@ def _main():
         model.load()
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
-    # 对测试集进行预测
+    # Predict on the test set
     if args.model == 'dae':
         model.predict(mal_test_dataset_producer, predict_model, indicator_masking=False)
     else:
         model.predict(mal_test_dataset_producer, indicator_masking=False)
     
 
-    # model.predict(mal_test_dataset_producer, indicator_masking=False)
     attack = OrthogonalPGD(norm=args.norm,
                            project_detector=args.project_detector,
                            project_classifier=args.project_classifier,
@@ -219,26 +218,26 @@ def _main():
     model.eval()
 
     if args.model == 'dae':
-        # 对筛选后的数据进行处理
+        # Process the filtered data
         for x, y in mal_test_dataset_producer:
-            # 数据格式转换和设备迁移
+            # Data format conversion and device migration
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
             
-            # 对模型进行对抗攻击并得到对抗样本
+            # Perform adversarial attack on the model and obtain adversarial samples
             adv_x_batch = attack.perturb_dae(predict_model, model, x, y,
                                         args.steps,
                                         args.step_length,
                                         verbose=True)
 
-            # 对抗样本的数据类型转换
+            # Convert adversarial samples to float32
             adv_x_batch = adv_x_batch.to(torch.float32)
             
-            # 使用当前模型清洗对抗样本
+            # Clean the adversarial samples using the current model
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
             
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
+            # Use the prediction model to predict on the cleaned adversarial samples
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             
             y_cent_list.append(y_cent_batch)

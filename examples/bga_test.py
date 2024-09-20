@@ -7,12 +7,11 @@ import argparse
 import numpy as np
 import torch
 
-from core.defense import Dataset  # 导入防御模块中的Dataset类
+from core.defense import Dataset
 
 from core.defense import MalwareDetectionDNN, PGDAdvTraining, RFGSMAdvTraining, MaxAdvTraining, KernelDensityEstimation, \
     AdvMalwareDetectorICNN, AMalwareDetectionPAD, AMalwareDetectionDLA, AMalwareDetectionDNNPlus, DAE, VAE_SU
     
-
 from core.attack import BGA
 from tools import utils
 from config import config, logging, ErrorHandler
@@ -83,8 +82,7 @@ def _main():
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
         
-    # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")    
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
     
     mal_count = len(mal_testy)
     if mal_count <= 0:
@@ -94,11 +92,7 @@ def _main():
                                                            name='test')
     assert dataset.n_classes == 2
 
-    # test
-    if not hp_params['cuda']:
-        dv = 'cpu'
-    else:
-        dv = 'cuda'
+    dv = 'cuda' if hp_params['cuda'] else 'cpu'
         
     model = MalwareDetectionDNN(dataset.vocab_size,
                                 dataset.n_classes,
@@ -201,7 +195,6 @@ def _main():
 
     logger.info("Load model parameters from {}.".format(model.model_save_path))
     
-    # 对测试集进行预测
     if args.model == 'dae':
         model.predict(mal_test_dataset_producer, predict_model, indicator_masking=False)
     else:
@@ -220,12 +213,9 @@ def _main():
     model.eval()
 
     if args.model == 'dae':
-        # 对筛选后的数据进行处理
         for x, y in mal_test_dataset_producer:
-            # 数据格式转换和设备迁移
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
             
-            # 对模型进行对抗攻击并得到对抗样本
             adv_x_batch = attack.perturb(predict_model, x, y,
                                         args.steps,
                                         min_lambda_=1e-5,
@@ -233,15 +223,12 @@ def _main():
                                         use_sample=False,
                                         verbose=True)
 
-            # 对抗样本的数据类型转换
             adv_x_batch = adv_x_batch.to(torch.float32)
 
-            # 使用当前模型清洗对抗样本
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
             
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             
             y_cent_list.append(y_cent_batch)

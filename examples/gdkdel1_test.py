@@ -1,5 +1,5 @@
 """
-Warning: a large number of samples belonging to negative class will trigger the MOE
+Warning: A large number of samples belonging to the negative class will trigger the MOE
 """
 
 from __future__ import absolute_import
@@ -83,8 +83,7 @@ def _main():
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
     
-    # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")    
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
     
     
     mal_count = len(mal_testy)
@@ -100,7 +99,6 @@ def _main():
                                                            name='test'
                                                            )
 
-    # test
     if not hp_params['cuda']:
         dv = 'cpu'
     else:
@@ -220,14 +218,13 @@ def _main():
     
     
     x_adv_samples = np.concatenate(x_adv_samples, axis=0)
-    print("⭐ x_adv_samples.shape:", x_adv_samples.shape)
+    print("x_adv_samples.shape:", x_adv_samples.shape)
     test_z_shape = x_adv_samples.shape[0]
     test_z_labels = np.ones(test_z_shape, dtype=int)
     
     X_test = x_adv_samples
     y_test = test_z_labels
 
-    # 保存包含标签的攻击样本
     import pickle
     with open(os.path.join(save_dir, "x_adv.pkl"), "wb") as fw:
         pickle.dump((X_test, y_test), fw)

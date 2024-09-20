@@ -80,9 +80,7 @@ def _main():
     else:
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
 
-    # 打印出总共恶意样本的数量
     logger.info(f"Total number of malicious samples: {len(mal_test_x)}")    
-    
     
     mal_count = len(mal_testy)
     if mal_count <= 0:
@@ -92,7 +90,6 @@ def _main():
                                                            name='test')
     assert dataset.n_classes == 2
 
-    # test
     if not hp_params['cuda']:
         dv = 'cpu'
     else:
@@ -204,9 +201,7 @@ def _main():
     model.eval()
     
     if args.model == 'dae':
-        # 对筛选后的数据进行处理
         for x, y in mal_test_dataset_producer:
-            # 数据格式转换和设备迁移
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
             
             adv_x_batch = attack.perturb_dae(predict_model, model, x, y,
@@ -217,15 +212,12 @@ def _main():
                                         verbose=True,
                                         oblivion=args.oblivion)
 
-            # 对抗样本的数据类型转换
             adv_x_batch = adv_x_batch.to(torch.float32)
 
-            # 使用当前模型清洗对抗样本
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
             
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             
             y_cent_list.append(y_cent_batch)
@@ -256,7 +248,6 @@ def _main():
     if 'indicator' in type(model).__dict__.keys():
         indicator_flag = model.indicator(np.concatenate(x_density_list), y_pred)
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
-        # print(indicator_flag.shape, y_pred.shape)
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 

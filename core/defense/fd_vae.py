@@ -1,13 +1,13 @@
-# 使用未来版本特性，确保代码在Python2和Python3中有一致的行为
+# Import future features to ensure consistent behavior in Python 2 and 3
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# 导入基础库
+# Import basic libraries
 import random
 import os.path as path
 
-# 导入PyTorch相关库
+# Import PyTorch related libraries
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,46 +16,46 @@ import torch.nn.functional as F
 import torch.utils.data as data
 from core.defense.amd_template import DetectorTemplate
 
-# 导入Captum库，该库提供模型解释性工具，这里特别使用了集成梯度方法
+# Import Captum library for model interpretability
 from captum.attr import IntegratedGradients
 
-# 导入NumPy
+# Import NumPy
 import numpy as np
 
-# 从config模块中导入配置、日志和错误处理相关功能
+# Import configuration, logging and error handling from config module
 from config import config, logging, ErrorHandler
 
-# 导入自定义的工具模块
+# Import custom utility module
 from tools import utils
 
 from core.defense import Dataset
 
-# 初始化日志记录器并设置其名称
+# Initialize logger and set its name
 logger = logging.getLogger('core.defense.fd_vae')
 
-# 向日志记录器添加一个错误处理器，确保错误信息被适当捕获和处理
+# Add an error handler to the logger
 logger.addHandler(ErrorHandler)
 
 
 def get_label(length, IsBenign):
     '''
-        获取标签。
-        length: 标签的数量。
-        IsBen: 所需的标签是否为良性。
+    Get labels.
+    length: Number of labels.
+    IsBenign: Whether the required label is benign.
     '''
-    # 确保长度值为整数
+    # Ensure length is an integer
     assert length-int(length) < 0.01
     length = int(length)
 
-    # 生成长度为length的全1和全0向量
+    # Generate vectors of ones and zeros of length 'length'
     ones = np.ones((length, 1))
     zeros = np.zeros((length, 1))
 
-    # 根据IsBenign的值，返回对应的标签
+    # Return corresponding labels based on IsBenign
     if IsBenign:
-        return np.column_stack((ones, zeros))  # 如果IsBenign为True，返回良性标签
+        return np.column_stack((ones, zeros))  # Return benign labels if IsBenign is True
     else:
-        return np.column_stack((zeros, ones))  # 如果IsBenign为False，返回恶性标签
+        return np.column_stack((zeros, ones))  # Return malicious labels if IsBenign is False
 
 
 def check_requires_grad(model):
@@ -64,43 +64,41 @@ def check_requires_grad(model):
 
 
 class mu_sigma_MLP(nn.Module):
-    # 初始化函数
+    # Initialization function
     def __init__(self,
                  num_epoch=30,
                  learn_rate=1e-3,
                  z_dim=20,
                  name='mlp'
                  ):
-        super(mu_sigma_MLP, self).__init__()  # 调用父类(nn.Module)的初始化函数
+        super(mu_sigma_MLP, self).__init__()  # Call the initialization function of the parent class (nn.Module)
 
-        self.num_epoch = num_epoch      # 设置训练的轮数
-        self.batch_size = 128           # 设置每批数据的大小
-        self.learn_rate = learn_rate    # 设置学习率
-        self.z_dim = z_dim              # 设置输入数据的维度
-        self.mu_wgt = 0.5               # 设置mu的权重
-        self.sgm_wgt = 0.5              # 设置sigma的权重
-        self.name = name                # 模型名称
+        self.num_epoch = num_epoch      # Set the number of training epochs
+        self.batch_size = 128           # Set the size of each batch of data
+        self.learn_rate = learn_rate    # Set the learning rate
+        self.z_dim = z_dim              # Set the dimension of input data
+        self.mu_wgt = 0.5               # Set the weight of mu
+        self.sgm_wgt = 0.5              # Set the weight of sigma
+        self.name = name                # Model name
 
-        # 定义神经网络结构:
-        # mu网络用于处理mu输入
+        # Define neural network structure:
+        # mu network for processing mu input
         self.mu_net = self._build_net(n_hidden=1000)
 
-        # sigma网络用于处理sigma输入
+        # sigma network for processing sigma input
         self.sigma_net = self._build_net(n_hidden=1000)
 
-        # 打印模型的结构
+        # Print model structure
         print('================================mu_sigma_MLP model architecture==============================')
         print(self)
         print('===============================================end==========================================')
 
-        # self.model_save_path = path.join(config.get('experiments', 'mlp') + '_' + "20231009-170626", 'model.pth')
         self.model_save_path = path.join(config.get(
             'experiments', 'mlp') + '_' + self.name, 'model.pth')
 
-    # 定义神经网络的子结构，这个网络包括4个线性层和中间的激活函数
-
+    # Define the sub-structure of the neural network, which includes 4 linear layers and intermediate activation functions
     def _build_net(self, n_hidden=128):
-        # 使用Sequential构造一个串联的神经网络模块
+        # Use Sequential to construct a series of neural network modules
         return nn.Sequential(
             nn.Linear(self.z_dim, n_hidden),
             nn.Tanh(),
@@ -117,15 +115,15 @@ class mu_sigma_MLP(nn.Module):
             nn.Linear(n_hidden, 2)
         )
 
-    # 前向传播函数
+    # Forward propagation function
     def forward(self, mu_in, sigma_in):
-        # 通过mu网络计算mu的输出
+        # Calculate mu output through mu network
         y1 = self.mu_net(mu_in)
 
-        # 通过sigma网络计算sigma的输出
+        # Calculate sigma output through sigma network
         y2 = self.sigma_net(sigma_in)
 
-        # 结合mu和sigma的输出，使用权重进行加权平均
+        # Combine mu and sigma outputs, using weights for weighted average
         y = self.mu_wgt * y1 + self.sgm_wgt * y2
 
         return y
@@ -149,7 +147,6 @@ class mu_sigma_MLP(nn.Module):
 
                 # Forward propagation
                 y, muvae, sigmavae = vae_model.f(inputs)
-                # print("muvae, sigmavae:", (muvae, sigmavae))
                 outputs = self(muvae, sigmavae)
 
                 loss_reconstruction = criterion_reconstruction(y, inputs)
@@ -188,16 +185,16 @@ class mu_sigma_MLP(nn.Module):
                     if accuracy > best_accuracy:
                         best_accuracy = accuracy
 
-                        # 检查模型保存路径是否存在，如果不存在，则创建
+                        # Check if model save path exists, if not, create it
                         if not path.exists(self.model_save_path):
                             utils.mkdir(path.dirname(self.model_save_path))
 
-                        # 保存当前的模型参数
+                        # Save current model parameters
                         torch.save(self.state_dict(), self.model_save_path)
 
-                        # 如果开启了详细输出模式，显示模型保存路径
+                        # If verbose mode is enabled, display model save path
                         if verbose:
-                            print(f'模型保存在路径： {self.model_save_path}')
+                            print(f'Model saved at path: {self.model_save_path}')
 
     def load(self):
         self.load_state_dict(torch.load(self.model_save_path))
@@ -215,38 +212,37 @@ class VAE_2(nn.Module):
                  name='VAE_2'):
         super(VAE_2, self).__init__()
 
-        # 初始化变量
-        self.dim_img = dim_img          # 图片的维度
-        self.n_hidden = n_hidden        # 隐藏层的神经元数量
-        self.dim_z = dim_z              # 潜在空间的维度
-        self.KLW = KLW                  # KL散度的权重
-        self.NLOSSW = NLOSSW            # 新的损失函数的权重
-        self.loss_type = loss_type      # 损失函数的类型
-        self.learn_rate = learn_rate    # 学习率
-        self.name = name                # 模型名称
+        # Initialize variables
+        self.dim_img = dim_img          # Image dimension
+        self.n_hidden = n_hidden        # Number of neurons in hidden layer
+        self.dim_z = dim_z              # Dimension of latent space
+        self.KLW = KLW                  # Weight of KL divergence
+        self.NLOSSW = NLOSSW            # Weight of new loss function
+        self.loss_type = loss_type      # Type of loss function
+        self.learn_rate = learn_rate    # Learning rate
+        self.name = name                # Model name
         self.mu = -1
         self.sigma = -1
 
-        # 高斯MLP编码器网络结构
+        # Gaussian MLP encoder network structure
         self.fc1 = nn.Linear(self.dim_img, n_hidden)
         self.fc2 = nn.Linear(n_hidden, n_hidden)
         self.fc2_mu = nn.Linear(n_hidden, self.dim_z)
         self.fc2_sigma = nn.Linear(n_hidden, self.dim_z)
 
-        # 伯努利MLP解码器网络结构
+        # Bernoulli MLP decoder network structure
         self.fc3 = nn.Linear(self.dim_z, n_hidden)
         self.fc4 = nn.Linear(n_hidden, n_hidden)
         self.fc5 = nn.Linear(n_hidden, self.dim_img)
 
-        # 打印模型的结构
+        # Print model structure
         print('========================================VAE model architecture==============================')
         print(self)
         print('===============================================end==========================================')
 
-        # 定义模型的保存路径
+        # Define model save path
         self.model_save_path = path.join(config.get(
             'experiments', 'vae') + '_' + self.name, 'model.pth')
-        # self.model_save_path = path.join(config.get('experiments', 'vae') + '_' + "20231008-184510", 'model.pth')
 
     def gaussian_MLP_encoder(self, x, keep_prob):
         h0 = F.elu(self.fc1(x))
@@ -255,7 +251,7 @@ class VAE_2(nn.Module):
         h1 = F.tanh(self.fc2(h0))
         h1 = F.dropout(h1, p=1-keep_prob)
 
-        # 计算均值mu和方差sigma
+        # Calculate mean mu and variance sigma
         mu = self.fc2_mu(h1)
         sigma = 1e-6 + F.softplus(self.fc2_sigma(h1))
 
@@ -268,30 +264,29 @@ class VAE_2(nn.Module):
         h1 = F.elu(self.fc4(h0))
         h1 = F.dropout(h1, p=1-keep_prob)
 
-        # 输出层使用Sigmoid激活函数，得到在[0,1]范围内的输出y
+        # Output layer uses Sigmoid activation function to get output y in range [0,1]
         y = torch.sigmoid(self.fc5(h1))
         return y
 
     def forward(self, x_hat, x, x_comp, label_x, label_x_comp, keep_prob):
-        # 编码器部分:
+        # Encoder part:
         mu, sigma = self.gaussian_MLP_encoder(x_hat, keep_prob)
-        # print("Shape of x_comp:", x_comp.shape)
         mu1, sigma1 = self.gaussian_MLP_encoder(x_comp, keep_prob)
         muvae, sigmavae = self.gaussian_MLP_encoder(x, keep_prob)
 
-        # 更新 mu 和 sigma 的值
+        # Update mu and sigma values
         self.mu = muvae
         self.sigma = sigmavae
 
-        # 对z进行采样:
-        # 利用高斯分布的重参数技巧采样z
+        # Sample z:
+        # Use reparameterization trick of Gaussian distribution to sample z
         z = muvae + sigmavae * torch.randn_like(muvae)
 
-        # 解码器部分:
+        # Decoder part:
         y = self.bernoulli_MLP_decoder(z, keep_prob)
         y = torch.clamp(y, 1e-8, 1 - 1e-8)
 
-        # 计算损失函数:
+        # Calculate loss function:
         marginal_likelihood = torch.sum(
             x * torch.log(y) + (1 - x) * torch.log(1 - y), 1)
         KL_divergence = 0.5 * \
@@ -300,17 +295,17 @@ class VAE_2(nn.Module):
         loss_bac = 60 * vector_loss
         loss_mean = torch.mean((mu - mu1)**2, 1)
 
-        # 根据向量损失和均值损失计算总损失
+        # Calculate total loss based on vector loss and mean loss
         loss_0 = torch.mean(loss_mean * (1 - vector_loss))
         loss_1 = torch.mean(
             torch.abs(F.relu(loss_bac - loss_mean)) * vector_loss)
 
-        # 计算ELBO (证据下界)
+        # Calculate ELBO (Evidence Lower BOund)
         ELBO = self.KLW * \
             torch.mean(marginal_likelihood) - torch.mean(KL_divergence)
         loss = -ELBO
 
-        # 根据新的损失更新原损失
+        # Update original loss with new loss
         new_loss = (loss_1 + loss_0) * self.NLOSSW
         if self.loss_type[0] == '1':
             loss = loss + new_loss
@@ -320,22 +315,22 @@ class VAE_2(nn.Module):
     def f(self, x):
         muvae, sigmavae = self.gaussian_MLP_encoder(x, 0.9)
 
-        # 更新 mu 和 sigma 的值
+        # Update mu and sigma values
         self.mu = muvae
         self.sigma = sigmavae
 
-        # 对z进行采样:
-        # 利用高斯分布的重参数技巧采样z
+        # Sample z:
+        # Use reparameterization trick of Gaussian distribution to sample z
         z = muvae + sigmavae * torch.randn_like(muvae)
 
-        # 解码器部分:
+        # Decoder part:
         y = self.bernoulli_MLP_decoder(z, 0.9)
         y = torch.clamp(y, 1e-8, 1 - 1e-8)
 
         return y, muvae, sigmavae
 
     def train_model(self, train_data_producer, batch_size=128, n_epochs=10, verbose=True, device='cuda'):
-        # 初始化优化器，这里使用Adam优化器
+        # Initialize optimizer, using Adam optimizer here
         optimizer = optim.Adam(self.parameters())
 
         ben_data_list = []
@@ -348,30 +343,30 @@ class VAE_2(nn.Module):
 
             ben_data_list.append(ben_data)
             mal_data_list.append(mal_data)
-            mal_data_list.append(mal_data)  # 叠加两次
+            mal_data_list.append(mal_data)  # Stack twice
 
         # Concatenate all batches together
         ben_data_combined = torch.cat(ben_data_list, 0).to(device)
         mal_data_combined = torch.cat(mal_data_list, 0).to(device)
 
-        # 获取较少的样本数，为了确保良性和恶意样本数量相同
+        # Get the smaller number of samples to ensure equal number of benign and malicious samples
         n_samples = min(len(ben_data_combined), len(mal_data_combined))
         total_batch = n_samples // batch_size
 
-        # 开始训练循环
+        # Start training loop
         for epoch in range(n_epochs):
-            # 设置随机数种子
+            # Set random seed
             random.seed(epoch)
 
-            # 对数据进行随机排列
+            # Randomly shuffle the data
             indices_ben = torch.randperm(len(ben_data_combined))[:n_samples]
             indices_mal = torch.randperm(len(mal_data_combined))[:n_samples]
 
-            # 获取随机排列后的数据
+            # Get shuffled data
             ben_data_combined = ben_data_combined[indices_ben]
             mal_data_combined = mal_data_combined[indices_mal]
 
-            # 获取批次的标签
+            # Get batch labels
             lbBen = get_label(batch_size, True)
             lbMal = get_label(batch_size, False)
             batch_label = np.row_stack((lbBen, lbMal))
@@ -379,7 +374,7 @@ class VAE_2(nn.Module):
             for i in range(total_batch):
                 offset = (i * batch_size) % n_samples
 
-                # 获取良性和恶意的批次数据
+                # Get benign and malicious batch data
                 batch_ben_input_s = ben_data_combined[offset:(
                     offset + batch_size), :]
                 batch_mal_input_s = mal_data_combined[offset:(
@@ -389,15 +384,15 @@ class VAE_2(nn.Module):
                 batch_input = np.row_stack(
                     (batch_ben_input_s_cpu, batch_mal_input_s_cpu))
 
-                # 合并输入数据和标签
+                # Combine input data and labels
                 batch_input_wl = np.column_stack((batch_input, batch_label))
-                np.random.shuffle(batch_input_wl)  # 打乱合并后的数据
+                np.random.shuffle(batch_input_wl)  # Shuffle combined data
 
-                # 分离输入数据和标签
+                # Separate input data and labels
                 batch_xs_input = batch_input_wl[:, :-2]
                 batch_xs_label = batch_input_wl[:, -2:]
 
-                # 获取下一个批次的数据作为比较
+                # Get next batch data for comparison
                 offset = ((i + 1) * batch_size) % (n_samples - batch_size)
                 batch_ben_input_s = ben_data_combined[offset:(
                     offset + batch_size), :]
@@ -409,20 +404,20 @@ class VAE_2(nn.Module):
                     (batch_ben_input_s_cpu, batch_mal_input_s_cpu))
 
                 batch_input_wl = np.column_stack((batch_input, batch_label))
-                np.random.shuffle(batch_input_wl)  # 打乱合并后的数据
+                np.random.shuffle(batch_input_wl)  # Shuffle combined data
 
-                # 分离输入数据和标签
+                # Separate input data and labels
                 batch_xcomp_input = batch_input_wl[:, :-2]
                 batch_xcomp_label = batch_input_wl[:, -2:]
 
-                # 获取目标数据
+                # Get target data
                 batch_xs_target = ben_data_combined[offset:(
                     offset + batch_size), :]
                 batch_xs_target = torch.cat(
                     (batch_xs_target, batch_xs_target), dim=0)
                 assert batch_xs_input.shape == batch_xs_target.shape
 
-                # 清零之前的梯度
+                # Zero out previous gradients
                 optimizer.zero_grad()
 
                 if isinstance(batch_xs_input, np.ndarray):
@@ -452,7 +447,7 @@ class VAE_2(nn.Module):
                 self.label_x_comp = batch_xcomp_label
                 self.keep_prob = 0.9
 
-                # 前向传播
+                # Forward propagation
                 y, z, loss, marginal_likelihood, KL_divergence = self.forward(batch_xs_input,
                                                                               batch_xs_target,
                                                                               batch_xcomp_input,
@@ -460,26 +455,26 @@ class VAE_2(nn.Module):
                                                                               batch_xcomp_label,
                                                                               0.9)
 
-                # 反向传播
+                # Backward propagation
                 loss.backward()
 
-                # 更新权重
+                # Update weights
                 optimizer.step()
 
-            # 打印每个周期的损失信息
+            # Print loss information for each epoch
             logger.info(
                 f"epoch[{epoch}/{n_epochs}]: L_tot {loss.item():.2f} L_likelihood {marginal_likelihood.item():.2f} L_divergence {KL_divergence.item():.2f}")
 
-        # 检查模型保存路径是否存在，如果不存在，则创建
+        # Check if model save path exists, if not, create it
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
 
-        # 保存当前的模型参数
+        # Save current model parameters
         torch.save(self.state_dict(), self.model_save_path)
 
-        # 如果开启了详细输出模式，显示模型保存路径
+        # If verbose mode is enabled, display model save path
         if verbose:
-            print(f'模型保存在路径： {self.model_save_path}')
+            print(f'Model saved at path: {self.model_save_path}')
 
     def load(self):
         self.load_state_dict(torch.load(self.model_save_path))
@@ -530,11 +525,11 @@ class VAE_SU(nn.Module, DetectorTemplate):
                          name=name
                          )
 
-        # 定义模型的保存路径
+        # Define model save path
         self.model_save_path = path.join(config.get('experiments', 'fd_vae') + '_' + self.name,
                                          'model.pth')
 
-        # 日志中打印模型的结构信息
+        # Log model structure information
         logger.info(
             '=====================================fd_vae model architecture=============================')
         logger.info(self)
@@ -544,14 +539,11 @@ class VAE_SU(nn.Module, DetectorTemplate):
         self.dim = self.Vae.dim_img
 
     def get_tau_sample_wise(self, y_pred=None):
-        return self.tau  # 返回tau，即决策阈值
+        return self.tau  # Return tau, i.e., decision threshold
 
     def forward(self, x, a=None, **kwargs):
         self.Vae.load()
         self.Mlp.load()
-
-        # check_requires_grad(self.Vae)
-        # check_requires_grad(self.Mlp)
 
         x = x.float()
         y, muvae, sigmavae = self.Vae.f(x)
@@ -559,7 +551,6 @@ class VAE_SU(nn.Module, DetectorTemplate):
         loss_reconstruction = ((y - x) ** 2).sum(dim=-1)
 
         x_cent = torch.softmax(outputs, dim=-1)
-        # print("x_cent", x_cent)
 
         return x_cent, loss_reconstruction
 
@@ -572,31 +563,28 @@ class VAE_SU(nn.Module, DetectorTemplate):
         self.Mlp.train_model(
             vae_model, train_data_producer, device=self.device)
 
-        # 检查模型保存路径是否存在，如果不存在，则创建
+        # Check if model save path exists, if not, create it
         if not path.exists(self.model_save_path):
             utils.mkdir(path.dirname(self.model_save_path))
-        # 保存当前的模型参数
+        # Save current model parameters
         torch.save(self.state_dict(), self.model_save_path)
-        # 如果开启了详细输出模式，显示模型保存路径
+        # If verbose mode is enabled, display model save path
         if verbose:
-            print(f'模型保存在路径： {self.model_save_path}')
+            print(f'Model saved at path: {self.model_save_path}')
 
     def load(self):
         """
-        从磁盘加载模型参数
+        Load model parameters from disk
         """
         self.Vae.load_state_dict(torch.load(self.model_save_path))
         self.Mlp.load_state_dict(torch.load(self.model_save_path))
 
     def inference(self, test_data_producer):
         y_cent, x_prob = [], []
-        gt_labels = []  # 存储每批数据的真实标签
+        gt_labels = []  # Store true labels for each batch of data
 
         self.Vae.load()
         self.Mlp.load()
-
-        # check_requires_grad(self.Vae)
-        # check_requires_grad(self.Mlp)
 
         with torch.no_grad():
             for x, l in test_data_producer:
@@ -608,16 +596,16 @@ class VAE_SU(nn.Module, DetectorTemplate):
                 # Store the actual labels instead of the VAE output
                 gt_labels.append(l)
 
-        # 将所有批次的置信度垂直堆叠成一个张量
+        # Stack confidence values from all batches into a tensor
         y_cent = torch.cat(y_cent, dim=0)
         x_prob = torch.cat(x_prob, dim=0)
 
-        # 将所有批次的真实标签连接成一个张量
+        # Concatenate true labels from all batches into a tensor
         gt_labels = torch.cat(gt_labels, dim=0)
 
         return y_cent, x_prob, gt_labels
 
-    # 仅支持恶意软件样本的批量推理
+    # Only supports batch inference for malware samples
 
     def inference_batch_wise(self, x):
         assert isinstance(x, torch.Tensor)
@@ -627,8 +615,6 @@ class VAE_SU(nn.Module, DetectorTemplate):
 
         y, muvae, sigmavae = self.Vae.f(x)
         outputs = self.Mlp(muvae, sigmavae)
-
-        # print(outputs.shape)
 
         x_cent_values = torch.softmax(outputs, dim=-1).detach().cpu().numpy()
         x_cent = x_cent_values[:2] if len(
@@ -640,7 +626,7 @@ class VAE_SU(nn.Module, DetectorTemplate):
         return x_cent, reloss
 
     def indicator(self, reloss, y_pred=None):
-        # 手动设置metric
+        # Manually set metric
         metric = 500
         if isinstance(reloss, np.ndarray):
             reloss = torch.tensor(reloss, device=self.device)
@@ -651,7 +637,7 @@ class VAE_SU(nn.Module, DetectorTemplate):
         else:
             raise TypeError("Tensor or numpy.ndarray are expected.")
 
-    # 预测标签并进行评估
+    # Predict labels and perform evaluation
 
     def predict(self, test_data_producer, indicator_masking=True, metric=5000):
         y_cent, reloss, y_true = self.inference(test_data_producer)
@@ -659,15 +645,15 @@ class VAE_SU(nn.Module, DetectorTemplate):
         y_pred = y_cent.argmax(1).cpu().numpy()
         y_true = y_true.cpu().numpy()
 
-        # 获取指示器标志，用于后续的遮蔽或过滤
+        # Get indicator flags for subsequent masking or filtering
         indicator_flag = self.indicator(reloss, metric).cpu().numpy()
 
-        # 定义一个内部函数来评估模型的性能
+        # Define an internal function to evaluate model performance
         def measurement(_y_true, _y_pred):
-            # 导入所需的评估指标库
+            # Import required evaluation metric libraries
             from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
 
-            # 计算并打印准确率和平衡准确率
+            # Calculate and print accuracy and balanced accuracy
             accuracy = accuracy_score(_y_true, _y_pred)
             b_accuracy = balanced_accuracy_score(_y_true, _y_pred)
             logger.info(
@@ -675,37 +661,37 @@ class VAE_SU(nn.Module, DetectorTemplate):
             logger.info(
                 f"The balanced accuracy on the test dataset is {b_accuracy * 100:.5f}%")
 
-            # 检查是否所有类都存在于真实标签中
+            # Check if all classes are present in true labels
             if np.any([np.all(_y_true == i) for i in range(self.nb_classes)]):
                 logger.warning("class absent.")
                 return
 
-            # 计算混淆矩阵并从中获取各项指标
+            # Calculate confusion matrix and get various metrics from it
             tn, fp, fn, tp = confusion_matrix(_y_true, _y_pred).ravel()
             fpr = fp / float(tn + fp)
             fnr = fn / float(tp + fn)
             f1 = f1_score(_y_true, _y_pred, average='binary')
 
-            # 打印其他可能需要的评估指标
+            # Print other potentially needed evaluation metrics
             logger.info(f"False Negative Rate (FNR) is {fnr * 100:.5f}%, \
                         False Positive Rate (FPR) is {fpr * 100:.5f}%, F1 score is {f1 * 100:.5f}%")
 
-        # 首次进行评估
+        # Perform evaluation for the first time
         measurement(y_true, y_pred)
 
-        # 根据indicator_masking决定如何处理指示器
+        # Decide how to handle the indicator based on indicator_masking
         if indicator_masking:
-            # 排除带有“不确定”响应的示例
+            # Exclude examples with "uncertain" responses
             y_pred = y_pred[indicator_flag]
             y_true = y_true[indicator_flag]
         else:
-            # 在这里不是过滤掉样本，而是将其预测重置为1
+            # Here, instead of filtering out samples, reset their predictions to 1
             y_pred[~indicator_flag] = 1.
 
-        # 打印指示器状态和阈值信息
+        # Print indicator status and threshold information
         logger.info('The indicator is turning on...')
 
-        # 再次进行评估
+        # Perform evaluation again
         measurement(y_true, y_pred)
 
     def load(self):

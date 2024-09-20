@@ -1,5 +1,5 @@
 """
-Warning: a large number of samples belonging to negative class will trigger the MOE
+Note: A large number of samples belonging to the negative class will trigger the MOE
 """
 
 from __future__ import absolute_import
@@ -91,8 +91,7 @@ def _main():
         mal_test_x, mal_testy = utils.read_pickle_frd_space(mal_save_path)
     mal_count = len(mal_testy)
 
-    # 打印出总共恶意样本的数量
-    logger.info(f"⭐Total number of malicious samples: {len(mal_test_x)}")
+    logger.info(f"Total number of malicious samples: {len(mal_test_x)}")
     
 
     ben_test_x, ben_testy = test_x[testy == 0], testy[testy == 0]
@@ -107,7 +106,6 @@ def _main():
                                                            name='test'
                                                            )
 
-    # test
     if not hp_params['cuda']:
         dv = 'cpu'
     else:
@@ -228,9 +226,7 @@ def _main():
     
     model.eval()
     if args.model == 'dae':
-        # 对筛选后的数据进行处理
         for x, y in mal_test_dataset_producer:
-            # 数据格式转换和设备迁移
             x, y = utils.to_tensor(x.double(), y.long(), model.device)
             
             adv_x_batch = attack.perturb(predict_model, x, y,
@@ -240,15 +236,12 @@ def _main():
                                         max_lambda_=1e5,
                                         verbose=True)
 
-            # 对抗样本的数据类型转换
             adv_x_batch = adv_x_batch.to(torch.float32)
 
-            # 使用当前模型清洗对抗样本
             Purified_adv_x_batch = model(adv_x_batch).to(torch.float64)
             
             Purified_adv_x_batch = Purified_adv_x_batch.to(model.device)
             
-            # 使用预测模型对清洗后的对抗样本进行预测
             y_cent_batch, _ = predict_model.inference_batch_wise(Purified_adv_x_batch)
             
             y_cent_list.append(y_cent_batch)

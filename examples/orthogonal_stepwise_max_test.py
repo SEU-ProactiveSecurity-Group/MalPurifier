@@ -155,10 +155,10 @@ def _main():
         
     logger.info("Load model parameters from {}.".format(model.model_save_path))
 
-    # 预测给定的恶意样本集合，其中indicator_masking为False表示不进行指标掩盖
+    # Predict the given malicious sample set, where indicator_masking=False indicates no indicator masking
     model.predict(mal_test_dataset_producer, indicator_masking=False)
 
-    # 初始化OrthogonalStepwiseMax攻击方法
+    # Initialize OrthogonalStepwiseMax attack method
     attack = OrthogonalStepwiseMax(project_detector=args.project_detector,
                                 project_classifier=args.project_classifier,
                                 k=None, use_random=args.random_start,
@@ -166,22 +166,20 @@ def _main():
                                 device=model.device
                                 )
 
-    # 初始化列表，用于存储后续的中间结果
-    y_cent_list, x_density_list = [], []  # 存储模型的推断结果
-    x_mod_integrated = []  # 存储每个扰动样本与原始样本的差异
-    x_adv_samples = []  # 存储扰动的恶意样本
+    # Initialize lists to store subsequent intermediate results
+    y_cent_list, x_density_list = [], []  # Store model inference results
+    x_mod_integrated = []  # Store the difference between each perturbed sample and the original sample
+    x_adv_samples = []  # Store perturbed malicious samples
 
-    # 将模型设置为评估模式
+    # Set the model to evaluation mode
     model.eval()
 
-    # 遍历恶意测试数据集，并对每个样本执行对抗性攻击
+    # Iterate through the malicious test dataset and perform adversarial attacks on each sample
     for x, y in mal_test_dataset_producer:
-        # 将数据和标签转换为tensor，并移至相应的设备
+        # Convert data and labels to tensors and move to the appropriate device
         x, y = utils.to_tensor(x.double(), y.long(), model.device)
 
-        # 使用给定的攻击参数扰动样本
-        # example: 
-        # python -m examples.stepwise_max_test --steps 500 --step_length_linf 0.002 --step_length_l2 0.05 --model "md_dnn" --model_name "20230724-230516"
+        # Perturb samples using given attack parameters
         adv_x_batch = attack.perturb(model, x, y,
                                     args.steps,
                                     args.step_check,
@@ -190,48 +188,48 @@ def _main():
                                     args.step_length_linf,
                                     verbose=True)
 
-        # 对扰动的样本进行推断，获取中心预测和密度值
+        # Perform inference on perturbed samples to get center predictions and density values
         y_cent_batch, x_density_batch = model.inference_batch_wise(adv_x_batch)
 
-        # 将扰动样本的中心预测、密度值、差异以及样本本身保存到各自的列表中
+        # Save center predictions, density values, differences, and samples themselves to their respective lists
         y_cent_list.append(y_cent_batch)
         x_density_list.append(x_density_batch)
         x_mod_integrated.append((adv_x_batch - x).detach().cpu().numpy())
         x_adv_samples.append((adv_x_batch).detach().cpu().numpy())
 
-    # 评估扰动样本的预测准确率
+    # Evaluate prediction accuracy of perturbed samples
     y_pred = np.argmax(np.concatenate(y_cent_list), axis=-1)
     logger.info(f'The mean accuracy on perturbed malware is {sum(y_pred == 1.) / mal_count * 100:.3f}%')
 
-    # 如果模型包含指标方法，则评估并打印指标的有效性
+    # If the model includes an indicator method, evaluate and print the effectiveness of the indicator
     if 'indicator' in type(model).__dict__.keys():
         indicator_flag = model.indicator(np.concatenate(x_density_list), y_pred)
         logger.info(f"The effectiveness of indicator is {sum(~indicator_flag) / mal_count * 100:.3f}%")
         acc_w_indicator = (sum(~indicator_flag) + sum((y_pred == 1.) & indicator_flag)) / mal_count * 100
         logger.info(f'The mean accuracy on adversarial malware (w/ indicator) is {acc_w_indicator:.3f}%.')
 
-    # 定义保存对抗样本的目录，并确保该目录存在
+    # Define the directory to save adversarial samples and ensure it exists
     save_dir = os.path.join(config.get('experiments', 'orthogonal_stepwise_max'), args.model)
     if not os.path.exists(save_dir):
         utils.mkdir(save_dir)
 
-    # 将差异列表和对抗样本列表转换为numpy数组
+    # Convert difference list and adversarial sample list to numpy arrays
     x_mod_integrated = np.concatenate(x_mod_integrated, axis=0)
     x_adv_samples = np.concatenate(x_adv_samples, axis=0)
     print("⭐ x_adv_samples.shape:", x_adv_samples.shape)
 
-    # 为对抗样本定义标签（全部设为1）
+    # Define labels for adversarial samples (all set to 1)
     test_z_labels = np.ones(x_adv_samples.shape[0], dtype=int)
 
-    # 将对抗样本和标签保存为pkl文件
+    # Save adversarial samples and labels as a pkl file
     import pickle
     with open(os.path.join(save_dir, "x_adv.pkl"), "wb") as fw:
         pickle.dump((x_adv_samples, test_z_labels), fw)
 
-    # 保存扰动空间中的样本差异
+    # Save sample differences in perturbation space
     utils.dump_pickle_frd_space(x_mod_integrated, os.path.join(save_dir, 'x_mod.list'))
 
-    # 如果设置为real，则使用扰动的样本生成真实的对抗性恶意软件
+    # If set to real, generate real adversarial malware using perturbed samples
     if args.real:
         attack.produce_adv_mal(x_mod_integrated, mal_test_x.tolist(), config.get('dataset', 'malware_dir'))
 

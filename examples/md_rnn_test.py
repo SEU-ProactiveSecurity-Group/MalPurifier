@@ -1,90 +1,72 @@
-# 使用未来版本特性，确保代码在Python2和Python3中有一致的行为
 from __future__ import absolute_import, division, print_function
 
-# 导入所需的库
 import os.path as path
 import argparse
 import time
-import numpy
 
-# 导入自定义模块
 from core.defense import Dataset, MalwareDetectionRNN
-from tools.utils import save_args, get_group_args, to_tensor, dump_pickle, read_pickle
+from tools.utils import save_args, get_group_args, dump_pickle
 
-# 初始化argparse对象，用于解析命令行参数
-cmd_md = argparse.ArgumentParser(description='用于学习恶意软件检测器的参数')
+cmd_md = argparse.ArgumentParser(description='Arguments for malware detector')
 
-# 定义与特征提取相关的命令行参数
 feature_argparse = cmd_md.add_argument_group(title='feature')
 feature_argparse.add_argument('--proc_number', type=int, default=2,
-                              help='用于特征提取的线程数量。')
+                              help='Number of threads for feature extraction.')
 feature_argparse.add_argument('--number_of_smali_files', type=int, default=1000000,
-                              help='表示每个应用的smali文件的最大数量。')
+                              help='Maximum number of smali files to represent each app')
 feature_argparse.add_argument('--max_vocab_size', type=int, default=10000,
-                              help='词汇表的最大容量。')
+                              help='Maximum vocabulary size')
 feature_argparse.add_argument('--update', action='store_true',
-                              help='是否更新已存在的特征。')
+                              help='Update existing features')
 
-# 定义与检测器相关的命令行参数
 detector_argparse = cmd_md.add_argument_group(title='detector')
 detector_argparse.add_argument('--cuda', action='store_true', default=True,
-                               help='是否使用CUDA进行GPU加速。')
+                               help='Use CUDA-enabled GPU')
 detector_argparse.add_argument('--seed', type=int, default=0,
-                               help='随机数种子。')
+                               help='Random seed')
 detector_argparse.add_argument('--hidden_size', type=int, default=200,
-                               help='RNN的隐藏状态的尺寸')
+                               help='Size of RNN hidden state')
 detector_argparse.add_argument('--num_layers', type=int, default=3,
-                               help='RNN的层数')
+                               help='Number of RNN layers')
 detector_argparse.add_argument('--dropout', type=float, default=0.6,
-                               help='Dropout率。')
+                               help='Dropout rate')
 detector_argparse.add_argument('--batch_size', type=int, default=128,
-                               help='Mini-batch的大小。')
+                               help='Mini-batch size')
 detector_argparse.add_argument('--epochs', type=int, default=50,
-                               help='训练的轮数。')
+                               help='Number of epochs to train')
 detector_argparse.add_argument('--lr', type=float, default=0.001,
-                               help='初始学习率。')
+                               help='Initial learning rate')
 detector_argparse.add_argument('--weight_decay', type=float, default=0e-4,
-                               help='权重衰减系数。')
+                               help='Weight decay coefficient')
 
-
-# 定义与数据集相关的命令行参数
 dataset_argparse = cmd_md.add_argument_group(title='data_producer')
 detector_argparse.add_argument('--cache', action='store_true', default=False,
-                               help='是否使用缓存数据。')
+                               help='Use cached data')
 
-# 定义与模式相关的命令行参数
 mode_argparse = cmd_md.add_argument_group(title='mode')
 mode_argparse.add_argument('--mode', type=str, default='train', choices=['train', 'test'], required=False,
-                           help='执行模式：训练或测试。')
+                           help='Train or test the model')
 mode_argparse.add_argument('--model_name', type=str, default='xxxxxxxx-xxxxxx', required=False,
-                           help='测试时使用的模型名称后缀。')
+                           help='Suffix date of tested model name')
 
-# 定义主函数
-def _main():
+def main():
     args = cmd_md.parse_args()
-    # 根据参数创建数据集
     dataset = Dataset(feature_ext_args=get_group_args(args, cmd_md, 'feature'))
-    # 获取训练数据集输入生成器
     train_dataset_producer = dataset.get_input_producer(*dataset.train_dataset, batch_size=args.batch_size, name='train', use_cache=args.cache)
-    # 获取验证数据集输入生成器
     val_dataset_producer = dataset.get_input_producer(*dataset.validation_dataset, batch_size=args.batch_size, name='val')
-    # 获取测试数据集输入生成器
     test_dataset_producer = dataset.get_input_producer(*dataset.test_dataset, batch_size=args.batch_size, name='test')
-    # 确保数据集的类别数为2
     assert dataset.n_classes == 2
 
-    # 设置计算设备
-    dv = 'cuda' if args.cuda else 'cpu'
+    device = 'cuda' if args.cuda else 'cpu'
     model_name = args.model_name if args.mode == 'test' else time.strftime("%Y%m%d-%H%M%S")
 
-    # 创建模型
     model = MalwareDetectionRNN(input_size=dataset.vocab_size,
                                 n_classes=dataset.n_classes,
-                                device=dv, 
+                                device=device, 
                                 name=model_name, 
                                 **vars(args))
 
-    model = model.to(dv).double()
+    model = model.to(device).double()
 
     if args.mode == 'train':
         model.fit(train_dataset_producer, val_dataset_producer, epochs=args.epochs, lr=args.lr, weight_decay=args.weight_decay)
@@ -94,6 +76,5 @@ def _main():
     model.load()
     model.predict(test_dataset_producer)
 
-
 if __name__ == '__main__':
-    _main()
+    main()

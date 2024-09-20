@@ -1,34 +1,34 @@
-# 使用未来版本特性，确保代码在Python2和Python3中有一致的行为
+# Ensure consistent behavior in Python 2 and 3
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# 导入基础库
+# Import basic libraries
 import time
 import os.path as path
 
-# 导入PyTorch相关库
+# Import PyTorch related libraries
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-# 导入Captum库，该库提供模型解释性工具，这里特别使用了集成梯度方法
+# Import Captum library for model interpretability
 from captum.attr import IntegratedGradients
 
-# 导入NumPy
+# Import NumPy
 import numpy as np
 
-# 从config模块中导入配置、日志和错误处理相关功能
+# Import configuration, logging, and error handling from config module
 from config import config, logging, ErrorHandler
 
-# 导入自定义的工具模块
+# Import custom tools module
 from tools import utils
 
-# 初始化日志记录器并设置其名称
+# Initialize logger and set its name
 logger = logging.getLogger('core.defense.fcn')
 
-# 向日志记录器添加一个错误处理器，确保错误信息被适当捕获和处理
+# Add an error handler to the logger
 logger.addHandler(ErrorHandler)
 
 
@@ -41,17 +41,17 @@ class MalwareDetectionFCN(nn.Module):
 
         self.parse_args(**kwargs)
 
-        # 定义全连接层
+        # Define fully connected layers
         self.fc1 = nn.Linear(input_size, self.hidden_units[0])
         self.fc2 = nn.Linear(self.hidden_units[0], self.hidden_units[1])
         self.fc3 = nn.Linear(self.hidden_units[1], self.hidden_units[2])
         self.classifier = nn.Linear(self.hidden_units[2], self.n_classes)
 
-        # 定义模型的保存路径
+        # Define model save path
         self.model_save_path = path.join(config.get('experiments', 'md_fcn') + '_' + self.name,
                                          'model.pth')
 
-        # 日志中打印模型的结构信息
+        # Log model architecture
         logger.info(
             '========================================fcn model architecture===============================')
         logger.info(self)
@@ -66,24 +66,24 @@ class MalwareDetectionFCN(nn.Module):
                    **kwargs
                    ):
         """
-        解析并设置网络的超参数。
+        Parse and set network hyperparameters.
         """
 
-        # 如果用户没有指定隐藏层，使用默认的配置
+        # Use default configuration if hidden units not specified
         if hidden_units is None:
             self.hidden_units = [512, 256, 128]
         else:
             self.hidden_units = hidden_units
 
-        # 设置dropout, alpha和smooth参数
+        # Set dropout, alpha and smooth parameters
         self.dropout = nn.Dropout(dropout)
         self.alpha_ = alpha_
         self.smooth = smooth
 
-        # 从kwargs中获取并设置proc_number
-        self.proc_number = kwargs.get('proc_number', None)  # 如果不存在，则返回None
+        # Get proc_number from kwargs
+        self.proc_number = kwargs.get('proc_number', None)
 
-        # 如果还有其他参数，记录警告，因为这些参数可能是未知的
+        # Log warning for unknown parameters
         if len(kwargs) > 0:
             logger.warning("Unknown hyper-parameters {}".format(str(kwargs)))
 
@@ -96,111 +96,111 @@ class MalwareDetectionFCN(nn.Module):
         x = self.dropout(x)
 
         logits = self.classifier(x)
-        probabilities = F.softmax(logits, dim=-1)  # 计算两个类的概率
+        probabilities = F.softmax(logits, dim=-1)  # Calculate probabilities for two classes
         return probabilities
 
     def inference(self, test_data_producer):
         """
-        进行模型推理，获得预测的置信度和真实标签
+        Perform model inference to get predicted confidences and true labels
 
-        参数
+        Parameters
         ----------
-        @param test_data_producer: 数据生产者或数据加载器，用于产生测试数据
+        @param test_data_producer: data producer or data loader for generating test data
 
-        返回值
+        Returns
         ----------
-        返回预测的置信度和真实标签
+        Returns predicted confidences and true labels
         """
-        confidences = []    # 存储每批数据的预测置信度
-        gt_labels = []      # 存储每批数据的真实标签
-        self.eval()         # 设置模型为评估模式
+        confidences = []    # Store predicted confidences for each batch
+        gt_labels = []      # Store true labels for each batch
+        self.eval()         # Set model to evaluation mode
 
-        # 使用torch.no_grad()来告诉PyTorch不要在推理过程中计算梯度
+        # Use torch.no_grad() to tell PyTorch not to calculate gradients during inference
         with torch.no_grad():
-            # 遍历每一批测试数据
+            # Iterate through each batch of test data
             for x, y in test_data_producer:
-                # 将数据转移到指定的设备（CPU或GPU）并调整数据类型
+                # Move data to specified device (CPU or GPU) and adjust data type
                 x, y = utils.to_device(x.double(), y.long(), self.device)
-                # 得到每一批数据的logits
+                # Get logits for each batch
                 logits = self.forward(x)
-                # 使用softmax函数得到每一批数据的置信度，并将其添加到confidences列表中
+                # Use softmax function to get confidences for each batch, and add to confidences list
                 confidences.append(F.softmax(logits, dim=-1))
-                # 将每一批数据的真实标签添加到gt_labels列表中
+                # Add true labels for each batch to gt_labels list
                 gt_labels.append(y)
 
-        # 将所有批次的置信度垂直堆叠成一个张量
+        # Vertically stack all batch confidences into a tensor
         confidences = torch.vstack(confidences)
-        # 将所有批次的真实标签连接成一个张量
+        # Concatenate all batch true labels into a tensor
         gt_labels = torch.cat(gt_labels, dim=0)
 
         return confidences, gt_labels
 
     def inference_dae(self, test_data_producer):
         """
-        进行模型推理，获得预测的置信度和真实标签
+        Perform model inference to get predicted confidences and true labels
 
-        参数
+        Parameters
         ----------
-        @param test_data_producer: 数据生产者或数据加载器，用于产生测试数据
+        @param test_data_producer: data producer or data loader for generating test data
 
-        返回值
+        Returns
         ----------
-        返回预测的置信度和真实标签
+        Returns predicted confidences and true labels
         """
-        confidences = []    # 存储每批数据的预测置信度
-        gt_labels = []      # 存储每批数据的真实标签
-        self.eval()         # 设置模型为评估模式
+        confidences = []    # Store predicted confidences for each batch
+        gt_labels = []      # Store true labels for each batch
+        self.eval()         # Set model to evaluation mode
 
-        # 使用torch.no_grad()来告诉PyTorch不要在推理过程中计算梯度
+        # Use torch.no_grad() to tell PyTorch not to calculate gradients during inference
         with torch.no_grad():
-            # 遍历每一批测试数据
+            # Iterate through each batch of test data
             for x, y in test_data_producer:
-                # 将数据转移到指定的设备（CPU或GPU）并调整数据类型
+                # Move data to specified device (CPU or GPU) and adjust data type
                 x, y = utils.to_device(x.double(), y.long(), self.device)
-                # 得到每一批数据的logits
+                # Get logits for each batch
                 logits = self.forward(x)
-                # 使用softmax函数得到每一批数据的置信度，并将其添加到confidences列表中
+                # Use softmax function to get confidences for each batch, and add to confidences list
                 confidences.append(F.softmax(logits, dim=-1))
-                # 将每一批数据的真实标签添加到gt_labels列表中
+                # Add true labels for each batch to gt_labels list
                 gt_labels.append(y)
 
         return confidences, gt_labels
 
     def inference_batch_wise(self, x):
         """
-        仅支持恶意软件样本的批量推理
+        Batch-wise inference supporting only malware samples
 
-        参数
+        Parameters
         ----------
-        @param x: 输入数据的张量
+        @param x: tensor of input data
 
-        返回值
+        Returns
         ----------
-        返回推理的置信度和标签
+        Returns inference confidences and labels
         """
-        # 确保输入是一个张量
+        # Ensure input is a tensor
         assert isinstance(x, torch.Tensor)
 
-        # 获得模型的输出
+        # Get model output
         logit = self.forward(x)
 
-        # 返回每个样本的置信度和一个与logit形状相同的全1数组（表示恶意软件样本）
+        # Return confidences for each sample and an array of ones (representing malware samples) with same shape as logit
         return torch.softmax(logit, dim=-1).detach().cpu().numpy(), np.ones((logit.size()[0],))
 
     def predict(self, test_data_producer, indicator_masking=True):
         """
-        预测标签并进行评估
+        Predict labels and perform evaluation
 
-        参数
+        Parameters
         --------
-        @param test_data_producer: torch.DataLoader, 用于生成测试数据的数据加载器
+        @param test_data_producer: torch.DataLoader, data loader for generating test data
         """
-        # 进行评估
+        # Perform evaluation
         confidence, y_true = self.inference(test_data_producer)
-        y_pred = confidence.argmax(1).cpu().numpy()  # 预测标签
-        y_true = y_true.cpu().numpy()                # 真实标签
+        y_pred = confidence.argmax(1).cpu().numpy()  # Predicted labels
+        y_true = y_true.cpu().numpy()                # True labels
 
-        # 使用sklearn的评估指标进行评估
+        # Use sklearn's evaluation metrics
         from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, balanced_accuracy_score
         accuracy = accuracy_score(y_true, y_pred)
         b_accuracy = balanced_accuracy_score(y_true, y_pred)
@@ -211,16 +211,16 @@ class MalwareDetectionFCN(nn.Module):
         MSG = "The balanced accuracy on the test dataset is {:.5f}%"
         logger.info(MSG.format(b_accuracy * 100))
 
-        # 检查数据中是否存在缺失的类别
+        # Check if any class is absent in the data
         if np.any([np.all(y_true == i) for i in range(self.n_classes)]):
             logger.warning("class absent.")
             return
 
-        # 计算混淆矩阵
+        # Calculate confusion matrix
         tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-        fpr = fp / float(tn + fp)                        # 计算假阳性率
-        fnr = fn / float(tp + fn)                        # 计算假阴性率
-        f1 = f1_score(y_true, y_pred, average='binary')  # 计算F1分数
+        fpr = fp / float(tn + fp)                        # Calculate False Positive Rate
+        fnr = fn / float(tp + fn)                        # Calculate False Negative Rate
+        f1 = f1_score(y_true, y_pred, average='binary')  # Calculate F1 score
 
         print("Other evaluation metrics we may need:")
         MSG = "False Negative Rate (FNR) is {:.5f}%、False Positive Rate (FPR) is {:.5f}%, F1 score is {:.5f}%"
@@ -228,144 +228,144 @@ class MalwareDetectionFCN(nn.Module):
 
     def customize_loss(self, logits, gt_labels, representation=None, mini_batch_idx=None):
         """
-        自定义损失函数
+        Customize loss function
 
-        参数
+        Parameters
         --------
-        @param logits: Tensor, 模型的输出
-        @param gt_labels: Tensor, 真实的标签
-        @param representation: Tensor, 可选参数，表示特征表示
-        @param mini_batch_idx: Int, 可选参数，表示小批次的索引
+        @param logits: Tensor, model output
+        @param gt_labels: Tensor, ground truth labels
+        @param representation: Tensor, optional parameter, feature representation
+        @param mini_batch_idx: Int, optional parameter, index of mini-batch
 
-        返回值
+        Returns
         --------
-        返回交叉熵损失
+        Returns cross-entropy loss
         """
         return F.cross_entropy(logits, gt_labels)
 
     def fit(self, train_data_producer, validation_data_producer, epochs=100, lr=0.005, weight_decay=0., weight_sampling=0.5, verbose=True):
         """
-        训练恶意软件检测器，根据验证集上的交叉熵损失选择最佳模型。
+        Train malware detector, select best model based on cross-entropy loss on validation set.
 
-        参数
+        Parameters
         ----------
-        @param train_data_producer: 对象, 用于生成一批训练数据的迭代器
-        @param validation_data_producer: 对象, 用于生成验证数据的迭代器
-        @param epochs: 整数, 训练的周期数
-        @param lr: 浮点数, Adam优化器的学习率
-        @param weight_decay: 浮点数, 惩罚因子
-        @param verbose: 布尔值, 是否显示详细的日志
+        @param train_data_producer: object, iterator for generating batches of training data
+        @param validation_data_producer: object, iterator for generating validation data
+        @param epochs: int, number of training epochs
+        @param lr: float, learning rate for Adam optimizer
+        @param weight_decay: float, penalty factor
+        @param verbose: bool, whether to display detailed logs
         """
-        # 初始化优化器
+        # Initialize optimizer
         optimizer = optim.Adam(self.parameters(), lr=lr,
                                weight_decay=weight_decay)
-        best_avg_acc = 0.   # 记录验证集上的最佳准确率
-        best_epoch = 0      # 记录最佳准确率对应的周期
-        total_time = 0.     # 总的训练时间
+        best_avg_acc = 0.   # Record best accuracy on validation set
+        best_epoch = 0      # Record epoch corresponding to best accuracy
+        total_time = 0.     # Total training time
 
-        # 获取训练数据批次的数量
+        # Get number of training data batches
         nbatches = len(train_data_producer)
 
-        # 进行指定次数的训练周期
+        # Perform specified number of training epochs
         for i in range(epochs):
-            # 设置模型为训练模式
+            # Set model to training mode
             self.train()
-            # 初始化列表用于保存每批数据的损失值和准确率
+            # Initialize lists to store loss values and accuracies for each batch
             losses, accuracies = [], []
 
-            # 对每个训练数据批次进行遍历
+            # Iterate through each training data batch
             for idx_batch, (x_train, y_train) in enumerate(train_data_producer):
-                # 将数据转移到指定的计算设备（例如GPU或CPU）
+                # Move data to specified computation device (e.g., GPU or CPU)
                 x_train, y_train = utils.to_device(
                     x_train.double(), y_train.long(), self.device)
 
-                # 记录开始训练的时间
+                # Record start time of training
                 start_time = time.time()
 
-                # 清空之前累积的梯度
+                # Clear previously accumulated gradients
                 optimizer.zero_grad()
 
-                # 对输入数据进行前向传播
+                # Perform forward pass on input data
                 logits = self.forward(x_train)
 
-                # 根据模型的输出和真实标签计算损失
+                # Calculate loss based on model output and true labels
                 loss_train = self.customize_loss(logits, y_train)
 
-                # 对损失进行反向传播
+                # Perform backward pass on loss
                 loss_train.backward()
 
-                # 使用优化器更新模型参数
+                # Update model parameters using optimizer
                 optimizer.step()
 
-                # 计算训练这批数据所花费的总时间
+                # Calculate total time spent on training this batch
                 total_time += time.time() - start_time
 
-                # 计算这批数据上的准确率
+                # Calculate accuracy on this batch
                 acc_train = (logits.argmax(1) == y_train).sum(
                 ).item() / x_train.size()[0]
 
-                # 将时间转换为分钟和秒
+                # Convert time to minutes and seconds
                 mins, secs = int(total_time / 60), int(total_time % 60)
 
-                # 将这批数据的损失和准确率加入到列表中
+                # Add loss and accuracy of this batch to lists
                 losses.append(loss_train.item())
                 accuracies.append(acc_train)
 
-                # 如果开启了详细输出模式，显示当前训练进度和这批数据上的损失和准确率
+                # If verbose mode is on, display current training progress and loss and accuracy on this batch
                 if verbose:
                     logger.info(
-                        f'小批次： {i * nbatches + idx_batch + 1}/{epochs * nbatches} | 训练时间为 {mins:.0f} 分钟, {secs} 秒。')
+                        f'Batch: {i * nbatches + idx_batch + 1}/{epochs * nbatches} | Training time: {mins:.0f} minutes, {secs} seconds.')
                     logger.info(
-                        f'训练损失（小批次级别）: {losses[-1]:.4f} | 训练精度: {acc_train * 100:.2f}')
+                        f'Training loss (batch level): {losses[-1]:.4f} | Training accuracy: {acc_train * 100:.2f}')
 
-            self.eval()  # 将模型设置为评估模式
+            self.eval()  # Set model to evaluation mode
             avg_acc_val = []
 
-            with torch.no_grad():  # 确保在评估模式下不进行梯度的计算
+            with torch.no_grad():  # Ensure no gradient calculation in evaluation mode
                 for x_val, y_val in validation_data_producer:
-                    # 将数据移动到指定设备（例如GPU或CPU）上，并确保数据的类型为双精度浮点数和长整型
+                    # Move data to specified device (e.g., GPU or CPU), and ensure data types are double precision float and long integer
                     x_val, y_val = utils.to_device(
                         x_val.double(), y_val.long(), self.device)
 
-                    # 使用模型进行前向传播，得到输出结果
+                    # Perform forward pass using the model to get output results
                     logits = self.forward(x_val)
 
-                    # 计算验证数据上的准确率
+                    # Calculate accuracy on validation data
                     acc_val = (logits.argmax(1) == y_val).sum(
                     ).item() / x_val.size()[0]
 
-                    # 保存每一批验证数据的准确率
+                    # Save accuracy for each batch of validation data
                     avg_acc_val.append(acc_val)
 
-                # 计算所有验证数据的平均准确率
+                # Calculate average accuracy across all validation data
                 avg_acc_val = np.mean(avg_acc_val)
 
-            # 如果当前周期的验证精度超过之前的最佳验证精度
+            # If current epoch's validation accuracy exceeds previous best validation accuracy
             if avg_acc_val >= best_avg_acc:
-                # 更新最佳验证精度
+                # Update best validation accuracy
                 best_avg_acc = avg_acc_val
                 best_epoch = i
 
-                # 检查模型保存路径是否存在，如果不存在，则创建
+                # Check if model save path exists, if not, create it
                 if not path.exists(self.model_save_path):
                     utils.mkdir(path.dirname(self.model_save_path))
 
-                # 保存当前的模型参数
+                # Save current model parameters
                 torch.save(self.state_dict(), self.model_save_path)
 
-                # 如果开启了详细输出模式，显示模型保存路径
+                # If verbose mode is on, display model save path
                 if verbose:
-                    print(f'模型保存在路径： {self.model_save_path}')
+                    print(f'Model saved at path: {self.model_save_path}')
 
-            # 如果开启了详细输出模式，显示训练损失、训练精度、验证精度和最佳验证精度
+            # If verbose mode is on, display training loss, training accuracy, validation accuracy, and best validation accuracy
             if verbose:
                 logger.info(
-                    f'训练损失（周期级别）: {np.mean(losses):.4f} | 训练精度: {np.mean(accuracies) * 100:.2f}')
+                    f'Training loss (epoch level): {np.mean(losses):.4f} | Training accuracy: {np.mean(accuracies) * 100:.2f}')
                 logger.info(
-                    f'验证精度: {avg_acc_val * 100:.2f} | 最佳验证精度: {best_avg_acc * 100:.2f} 在第 {best_epoch} 个周期')
+                    f'Validation accuracy: {avg_acc_val * 100:.2f} | Best validation accuracy: {best_avg_acc * 100:.2f} at epoch {best_epoch}')
 
     def load(self):
         """
-        从磁盘加载模型参数
+        Load model parameters from disk
         """
         self.load_state_dict(torch.load(self.model_save_path))

@@ -15,6 +15,4 @@ def print(*args, **kwargs):
 
 
 # apk_feature = pickle.load( open( "./feature_example.pkl", "rb" ) )
-# pprint(apk_feature)
-# print(apk_feature)
 print(sys.path)

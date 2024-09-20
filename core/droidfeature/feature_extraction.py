@@ -56,7 +56,6 @@ class Apk2features(object):
         if len(kwargs) > 0:
             logger.warning("unused hyper parameters {}.".format(kwargs))
 
-    # 用于从指定目录中的 APK 文件中提取特征并保存。方法返回提取特征后的文件路径。
     def feature_extraction(self, sample_dir):
         """ save the android features and return the saved paths """
         sample_path_list = utils.check_dir(sample_dir)
@@ -64,8 +63,7 @@ class Apk2features(object):
             self.proc_number, initializer=utils.pool_initializer)
 
         def get_save_path(a_path):
-            sha256_code = os.path.splitext(os.path.basename(a_path))[
-                0]  # utils.get_sha256(apk_path)
+            sha256_code = os.path.splitext(os.path.basename(a_path))[0]
             save_path = os.path.join(
                 self.naive_data_save_dir, sha256_code + self.file_ext)
 
@@ -86,8 +84,7 @@ class Apk2features(object):
         feature_paths = []
 
         for i, apk_path in enumerate(sample_path_list):
-            sha256_code = os.path.splitext(os.path.basename(apk_path))[
-                0]  # utils.get_sha256(apk_path)
+            sha256_code = os.path.splitext(os.path.basename(apk_path))[0]
             save_path = os.path.join(
                 self.naive_data_save_dir, sha256_code + self.file_ext)
             if os.path.exists(save_path):
@@ -103,10 +100,6 @@ class Apk2features(object):
         suggest using the feature files for the training purpose)
         :param gt_labels: gt_labels, list or numpy.ndarray, ground truth labels
         :return: list, a list of words
-
-        feature_path_list：特征文件路径列表，每个路径指向一个特征文件。
-        gt_labels：真实标签，表示每个特征文件对应的恶意软件或良性样本。
-        方法返回一个包含词汇表、词汇信息和词汇类型的元组。
         """
         vocab_saving_path = os.path.join(
             self.intermediate_save_dir, 'data.vocab')
@@ -127,18 +120,14 @@ class Apk2features(object):
                     ), 'Expect both malware and benign samples.'
         assert len(feature_path_list) == len(gt_labels)
 
-        # 使用 collections.Counter 和 collections.defaultdict 创建计数器和字典以存储词汇表相关信息。
         counter_mal, counter_ben = collections.Counter(), collections.Counter()
         feat_info_dict = collections.defaultdict(set)
         feat_type_dict = collections.defaultdict(str)
 
-        # 遍历 feature_path_list 和 gt_labels
         for feature_path, label in zip(feature_path_list, gt_labels):
             if not os.path.exists(feature_path):
                 continue
             features = feature_gen.read_from_disk(feature_path)
-            # 获取特征列表、特征信息列表和特征类型列表。
-            # 根据标签更新恶意软件和良性样本的计数器。
             feature_list, feature_info_list, feature_type_list = feature_gen.get_feature_list(
                 features)
             feature_occurrence = list(dict.fromkeys(feature_list))
@@ -154,7 +143,6 @@ class Apk2features(object):
         if len(all_words) <= 0:
             raise ValueError("No features exist on this dataset.")
 
-        # 根据特征选择策略选择词汇
         maximum_vocab_size = self.maximum_vocab_size
         selected_words = []
 
@@ -176,9 +164,7 @@ class Apk2features(object):
         for api in susp_apis:
             if feature_gen.check_suspicious_api(api) or feature_gen.check_sensitive_api(api):
                 selected_words.append(api)
-        # ----------------------------------------
 
-        # remove components
         api_comps = np.array(all_words_type)[...] == feature_gen.ACTIVITY
         api_comps = api_comps | (
             np.array(all_words_type)[...] == feature_gen.SERVICE)
@@ -193,34 +179,26 @@ class Apk2features(object):
         logger.info(
             "The total number of words: {}-{}.".format(len(selected_words), len(all_words)))
 
-        # 计算恶意样本的特征频率
         mal_feature_frequency = np.array(list(map(counter_mal.get, all_words)))
         mal_feature_frequency[mal_feature_frequency == None] = 0
         mal_feature_frequency = mal_feature_frequency.astype(np.float64)
         mal_feature_frequency /= np.sum(gt_labels)
 
-        # 计算良性样本的特征频率
         ben_feature_frequency = np.array(list(map(counter_ben.get, all_words)))
         ben_feature_frequency[ben_feature_frequency == None] = 0
         ben_feature_frequency = ben_feature_frequency.astype(np.float64)
         ben_feature_frequency /= float(len(gt_labels) - np.sum(gt_labels))
 
-        # 计算特征频率差
         feature_freq_diff = abs(mal_feature_frequency - ben_feature_frequency)
 
-        # 根据特征频率差进行排序
         posi_selected = np.argsort(feature_freq_diff)[::-1]
         ordered_words = selected_words + [all_words[p] for p in posi_selected]
 
-        # 选择最多 maximum_vocab_size 个词汇
         selected_words = ordered_words[:maximum_vocab_size]
 
-        # 获取所选词汇的类型和对应的词汇信息：
-        # 使用 feat_type_dict 和 feat_info_dict 字典分别获取所选词汇的类型和对应的词汇信息，以便在之后的处理中使用。
         selected_word_type = list(map(feat_type_dict.get, selected_words))
         corresponding_word_info = list(map(feat_info_dict.get, selected_words))
 
-        # 保存所选词汇、词汇类型和对应词汇信息到文件，然后返回这些值
         if len(selected_words) > 0:
             utils.dump_pickle(selected_words, vocab_saving_path)
             utils.dump_pickle(selected_word_type, vocab_type_saving_path)
@@ -254,10 +232,6 @@ class Apk2features(object):
         else:
             raise FileNotFoundError
 
-    # ⭐ 这段代码定义了一个名为 feature2ipt 的方法，它将应用程序的特征映射到数值表示。
-    # feature2ipt 方法的主要目的是将应用程序的特征映射到一个固定长度的向量，
-    # 其中每个元素表示对应词汇表中单词的存在（1）或不存在（0）。
-    # 这样的数值表示可以作为机器学习模型的输入，以便对应用程序进行分类或其他分析任务。
     def feature2ipt(self, feature_path, label, vocabulary=None, cache_dir=None):
         """
         Map features to numerical representations
@@ -271,17 +245,14 @@ class Apk2features(object):
         :return: numerical representations corresponds to an app. Each representation contains a tuple
         (feature 1D array, label)
         """
-        # 确保词汇表不为空
         assert vocabulary is not None and len(vocabulary) > 0
 
-        # 检查缓存目录是否存在，如果存在则加载缓存数据
         if isinstance(cache_dir, str):
             rpst_cached_name = self.get_cached_name(feature_path)
             rpst_cached_path = os.path.join(cache_dir, rpst_cached_name)
             if os.path.exists(rpst_cached_path):
                 return utils.read_pickle(rpst_cached_path, use_gzip=True)
 
-        # 如果 feature_path 无效，则返回零向量表示
         if not isinstance(feature_path, str):
             logger.warning(
                 "Cannot find the feature path: {}, zero vector used".format(feature_path))
@@ -292,16 +263,13 @@ class Apk2features(object):
                 "Cannot find the feature path: {}, zero vector used".format(feature_path))
             return np.zeros((len(vocabulary), ), dtype=np.float32), []
 
-        # 从给定的 feature_path 加载原始特征，并将其格式化为非 API 特征和 API 特征。
         native_features = feature_gen.read_from_disk(feature_path)
         non_api_features, api_features = feature_gen.format_feature(
             native_features)
         features = non_api_features + api_features
 
-        # 初始化一个长度与词汇表相等的零向量（representation_vector）作为数值表示。
         representation_vector = np.zeros((len(vocabulary), ), dtype=np.float32)
 
-        # 将词汇表映射到其索引，并根据提取到的特征填充 representation_vector。
         dictionary = dict(zip(vocabulary, range(len(vocabulary))))
         filled_pos = [idx for idx in list(
             map(dictionary.get, features)) if idx is not None]
@@ -312,10 +280,6 @@ class Apk2features(object):
 
 
 def _main():
-    # project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    # sys.path.insert(0, project_root)
-    # sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-
     from config import config
 
     malware_dir_name = config.get('dataset', 'malware_dir')
@@ -338,19 +302,8 @@ def _main():
     labels[:len(mal_paths)] = 1
     pprint(labels)
 
-    # 获取词汇表 vocab
-    # 🐖 参数对不上
-    # vocab, _1 = feature_extractor.get_vocab(mal_paths + ben_paths, labels)
     vocab, vocab1, vocab2 = feature_extractor.get_vocab(
         mal_paths + ben_paths, labels)
-    # pprint(vocab)
-    # pprint(vocab1)
-    # pprint(vocab2)
-
-    # 使用 feature_extractor.feature2ipt() 方法将恶意软件目录中的第一个 APK 文件的特征转换为输入表示，
-    # 同时传入词汇表 vocab。结果存储在 n_rpst 和 api_rpst 中。
-    # 🐖 参数对不上
-    # n_rpst, api_rpst, _1 = feature_extractor.feature2ipt(mal_paths[0], label=1, vocabulary=vocab)
 
     for i in range(len(mal_paths)):
         n_rpst, api_rpst = feature_extractor.feature2ipt(
@@ -358,8 +311,6 @@ def _main():
         print(n_rpst)
         print(n_rpst.shape)
         print(api_rpst)
-
-    # print(api_rpst)
 
 
 if __name__ == "__main__":

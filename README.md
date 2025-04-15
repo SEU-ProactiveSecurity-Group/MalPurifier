@@ -9,6 +9,17 @@ Welcome to the repository for "[MalPurifier](https://arxiv.org/abs/2312.06423),"
 - **Under Review**: The research paper titled "MalPurifier: Enhancing Android Malware Detection with Adversarial Purification Against Evasion Attacks" is currently under submission for peer review.
 - **Ongoing Development**: This repository will be regularly updated with code, documentation, and other resources as the project progresses.
 
+## Citation
+
+```
+@article{zhou2023malpurifier,
+  title={MalPurifier: Enhancing Android malware detection with adversarial purification against evasion attacks},
+  author={Zhou, Yuyang and Cheng, Guang and Chen, Zongyao and Yu, Shui},
+  journal={arXiv preprint arXiv:2312.06423},
+  year={2023}
+}
+```
+
 ## Disclaimer
 
 The source code and specific methodologies of "MalPurifier" are currently withheld due to the innovative and confidential nature of the ongoing research. Full disclosure, including the public release of the code, will be considered following the completion of the review process and the paper's potential publication.

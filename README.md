@@ -12,11 +12,13 @@ Welcome to the repository for "[MalPurifier](https://arxiv.org/abs/2312.06423),"
 ## Citation
 
 ```
-@article{zhou2023malpurifier,
-  title={MalPurifier: Enhancing Android malware detection with adversarial purification against evasion attacks},
+@article{zhou2026malpurifier,
   author={Zhou, Yuyang and Cheng, Guang and Chen, Zongyao and Yu, Shui},
-  journal={arXiv preprint arXiv:2312.06423},
-  year={2023}
+  journal={IEEE Transactions on Dependable and Secure Computing}, 
+  title={MalPurifier: Enhancing Android Malware Detection with Adversarial Purification against Evasion Attacks}, 
+  year={2026},
+  pages={1-18},
+  doi={10.1109/TDSC.2026.3691948}
 }
 ```
 
